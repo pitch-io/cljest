@@ -1,0 +1,19 @@
+{
+  "env": {
+    "node": true,
+    "es2018": true
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.js"],
+      "env": {
+        "jest": true
+      },
+      "plugins": ["jest"],
+      "extends": ["plugin:jest/all"],
+      "rules": {
+        "jest/prefer-expect-assertions": "off"
+      }
+    }
+  ]
+}

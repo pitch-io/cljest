@@ -15,4 +15,8 @@ module.exports = {
     '\\.(clj|cljs)$': path.resolve(__dirname, 'jest.cljs-transformer.js'),
   },
   watchPlugins: [path.resolve(__dirname, 'jest.ns-watch-plugin.js')],
+  dependencyExtractor: path.resolve(__dirname, 'jest.dependencyExtractor.js'),
+  haste: {
+    hasteImplModulePath: path.resolve(__dirname, 'jest.hasteImpl.js'),
+  },
 }
