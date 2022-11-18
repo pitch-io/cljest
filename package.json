@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "description": "A preset for Jest to allow compiling ClojureScript tests",
-  "main": "jest-preset-shadow/jest-preset.js",
+  "main": "jest-preset.js",
   "scripts": {},
   "keywords": [],
   "author": "",
