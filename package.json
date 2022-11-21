@@ -1,10 +1,13 @@
 {
   "name": "jest-preset-shadow",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "A preset for Jest to allow compiling ClojureScript tests",
   "main": "jest-preset.js",
-  "scripts": {},
+  "scripts": {
+    "test": "jest --watch",
+    "lint": "eslint ."
+  },
   "keywords": [],
   "author": "",
   "license": "MIT",
@@ -14,5 +17,11 @@
     "jest-watcher": "^28.0.2",
     "node-fetch": "2.6.1",
     "synckit": "^0.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.27.0",
+    "eslint-plugin-jest": "^27.1.5",
+    "jest": "^29.3.1",
+    "jest-junit": "^14.0.1"
   }
 }
