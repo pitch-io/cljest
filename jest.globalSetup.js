@@ -18,6 +18,12 @@ async function fetchUntilAvailable(serverUrl) {
 module.exports = async function globalSetup() {
   const { globals } = await getProjectConfig()
 
+  if (!globals.shadowOutputDir) {
+    throw new Error(
+      'config.globals.shadowOutputDir must be set to the output-dir of your :jest shadow-cljs.edn build.'
+    )
+  }
+
   if (!globals.serverUrl) {
     throw new Error(
       'config.globals.serverUrl must be set to the server URL of the shadow compilation server. E.g. http://localhost:9001'
