@@ -1,11 +1,4 @@
 const path = require('path')
-const { getProjectConfig } = require('./utils')
-
-const { globals } = getProjectConfig()
-
-if (!globals || !globals.shadowOutputDir || !globals.serverUrl) {
-  throw new Error('You must set the global config variables shadowOutputDir and serverUrl')
-}
 
 module.exports = {
   moduleFileExtensions: ['clj', 'cljs', 'js'],
