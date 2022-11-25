@@ -22,3 +22,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install yarn
+        run: npm install yarn
+      - name: Install dependencies
+        run: ./node_modules/.bin/yarn install
+      - run: yarn lint
+      - run: yarn test:ci
