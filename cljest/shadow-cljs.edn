@@ -1,0 +1,10 @@
+{:builds {:jest {:target :npm-module
+                 :compiler-options {:output-feature-set :es8
+                                    ; We want to call functions using `.call` so that spying works as expected
+                                    :static-fns false
+                                    ; :warnings-as-errors true
+                                    :infer-externs false}
+                 :output-dir ".jest"
+                 ; Preloads doesn't work in `:npm-module`, and we need it so that we don't just load the deps in every test
+                 ; unnecessarily
+                 :ns-regexp "^cljest.*-spec$|cljest.preloads"}}}

@@ -1,2 +1,9 @@
 node_modules/
+.jest/
+.clj-kondo/
+.shadow-cljs/
+.cpcache/
+.lsp/
+cljest/reports/
+
 yarn-error.log

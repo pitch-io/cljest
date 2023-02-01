@@ -1,0 +1,16 @@
+        ;; Library deps
+{:deps {appliedscience/js-interop {:mvn/version "0.2.3"}
+        cheshire/cheshire {:mvn/version "5.10.2"}
+        com.taoensso/timbre {:mvn/version "5.2.1"}
+        com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
+        lambdaisland/deep-diff2 {:mvn/version "2.4.138"}
+        org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/clojurescript {:mvn/version "1.11.60"}
+        ring/ring-core {:mvn/version "1.7.1"}
+        ring/ring-defaults {:mvn/version "0.3.2"}
+        ring/ring-jetty-adapter {:mvn/version "1.7.1"}
+        thheller/shadow-cljs {:mvn/version "2.19.8"}
+
+        ;; Test specific deps
+        net.clojars.cyrik/cljs-macroexpand {:mvn/version "0.1.1"}}
+ :paths ["src"]}
