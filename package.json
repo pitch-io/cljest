@@ -1,5 +1,5 @@
 {
-  "name": "jest-preset-shadow",
+  "name": "jest-preset-cljest",
   "version": "0.0.2",
   "private": true,
   "description": "A preset for Jest to allow compiling ClojureScript tests",
