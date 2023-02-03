@@ -280,11 +280,6 @@
           config (coerce-config-with-pretty-exception! raw-config)]
       (reset! !config config))))
 
-(defn- print-with-newlines
-  [s]
-  (doseq [piece (str/split s #"\\n")]
-    (println piece)))
-
 (defn -main [raw-port]
   (let [port (Integer/parseInt raw-port)
         ; See https://github.com/thheller/shadow-cljs/blob/650d78f2a7d81f33cb2590e142ddcbcbd756d781/src/main/shadow/cljs/devtools/server/fs_watch.clj#L34
@@ -296,7 +291,7 @@
       (load-config!)
 
       (catch Exception e
-        (print-with-newlines (ex-message e))
+        (print (ex-message e))
         (println)
 
         (System/exit 1)))
