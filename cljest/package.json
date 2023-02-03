@@ -5,7 +5,7 @@
   "scripts": {
     "jest:watch": "jest --watch",
     "jest:ci": "jest --ci",
-    "jest:server": "clj -M -m cljest.server 9111 jest"
+    "jest:server": "clj -M -m cljest.server 9111"
   },
   "author": "Pitch Software GmbH",
   "license": "MIT",

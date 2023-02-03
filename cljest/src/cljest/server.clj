@@ -1,7 +1,12 @@
 (ns cljest.server
   (:require [cheshire.core :as cheshire]
             [clojure.core.async :as as]
-            [ring.adapter.jetty :refer [run-jetty]]
+            [clojure.edn :as edn]
+            [clojure.java.io :as io]
+            [clojure.string :as str]
+            [io.aviso.ansi :refer [bold bold-blue bold-green bold-red]]
+            [malli.core :as malli]
+            malli.transform
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.resource :refer [wrap-resource]]
@@ -15,6 +20,13 @@
             [shadow.cljs.devtools.server.system-bus :as devtools.server.system-bus]
             [shadow.cljs.model]
             [taoensso.timbre :as log]))
+
+;; Jetty announces some debug information when it's required, so to avoid this we require after telling it not
+;; to announce.
+;; Thanks to https://github.com/active-group/active-logger#jetty.
+(.setProperty (org.eclipse.jetty.util.log.Log/getProperties) "org.eclipse.jetty.util.log.announce" "false")
+
+(require '[ring.adapter.jetty :refer [run-jetty]])
 
 (defonce ^{:doc "The current build status, used by the /build-status endpoint. The following statuses may be in the atom:
 
@@ -192,17 +204,106 @@
       :else
       {:status 404})))
 
-(defn -main [raw-port raw-target-name]
-  (let [target (keyword raw-target-name)
-        port (Integer/parseInt raw-port)
+(defn- read-edn-safely
+  [io]
+  (try
+    (-> io
+        slurp
+        edn/read-string)
+    (catch RuntimeException _ nil)))
+
+(def ^:private schema
+  [:map
+   {:closed true}
+   [:test-src-dirs [:sequential :string]]
+   [:ns-suffixes [:sequential {:default ['-test]} :symbol]]
+   [:mode [:enum {:error/message "only :all is allowed" :default :all} :all]]
+   [:preloads-ns [:symbol {:default 'cljest.preloads}]]])
+
+(def ^:private !config (atom nil))
+
+(defn ^:private pluralize
+  "A simple pluralization method that adds an 's' to the end of the provided `word` if `n`
+  is not 1."
+  [word n]
+  (if (= 1 n)
+    word
+    (str word "s")))
+
+(defn ^:private humanize-error
+  "Given a malli schema error, generates a 'pretty' error message."
+  [error]
+  (let [{:keys [in schema value]} error
+        pretty-path (bold (str/join " → " in))
+        pretty-value (bold-blue value)
+        error-type (:type error)]
+
+    (cond
+      (= ::malli/extra-key error-type)
+      (str "You added an extra config key: " pretty-path ". Double check the spelling of the key.")
+
+      (and (= :enum (malli/type schema)) (not (contains? (malli/children schema) pretty-value)))
+      (str "The value at " pretty-path " did not match any of the allowed values. Value: " pretty-value ". Allowed values: " (bold-green (str/join ", " (malli/children schema))))
+
+      (and (= :string (malli/type schema)) (not (string? value)))
+      (str "The value at " pretty-path " should be a string but is not. Value: " pretty-value)
+
+      (and (= :symbol (malli/type schema)) (not (symbol? value)))
+      (str "The value at " pretty-path " should be a symbol but is not. Value: " pretty-value)
+
+      :else
+      (str "An unexpected error happened while attempting to parse " pretty-path ". Please report this as a bug and include your config in the report."))))
+
+(defn ^:private coerce-config-with-pretty-exception!
+  "Coerces the raw config based on the Malli schema. If it fails coercion, the exception is printed to the terminal in
+  a human friendly way."
+  [raw]
+  (try
+    (malli/coerce schema raw malli.transform/default-value-transformer)
+    (catch Exception e
+      (let [explanation (ex-data e)
+            errors (get-in explanation [:data :explain :errors])
+            num-errors (count errors)]
+        (throw (Exception. (str (bold-red (str "Error: Your jest-config.edn file had " num-errors " " (pluralize "error" num-errors) "."))
+                                "\n\n"
+                                (str/join "\n" (map humanize-error errors)))))))))
+
+(defn- load-config!
+  []
+  (let [config-io (io/file "jest-config.edn")]
+    (when-not (.exists config-io)
+      (throw (Exception. (str (bold-red "Error: A jest-config.edn should exist in the same directory as you started the cljest server.")
+                              " "
+                              "This file should be located next to your jest.config.js file (or equivalent)."))))
+
+    (let [raw-config (read-edn-safely config-io)
+          config (coerce-config-with-pretty-exception! raw-config)]
+      (reset! !config config))))
+
+(defn- print-with-newlines
+  [s]
+  (doseq [piece (str/split s #"\\n")]
+    (println piece)))
+
+(defn -main [raw-port]
+  (let [port (Integer/parseInt raw-port)
         ; See https://github.com/thheller/shadow-cljs/blob/650d78f2a7d81f33cb2590e142ddcbcbd756d781/src/main/shadow/cljs/devtools/server/fs_watch.clj#L34
         ; We want to disable shadow's watching and only poll for updates when a `/compile` API call comes
         ; in. We can't disable it programmatically but we can give it an arbitrarily large integer.
         config (merge (devtools.config/load-cljs-edn) {:fs-watch {:loop-wait Integer/MAX_VALUE}})]
 
+    (try
+      (load-config!)
+
+      (catch Exception e
+        (print-with-newlines (ex-message e))
+        (println)
+
+        (System/exit 1)))
+
     (devtools.server/start! config)
-    (log/infof "Starting Jest compilation server for %s" target)
-    (log/infof "HTTP server at http://localhost:%s for target %s" port target)
+    (log/infof "Starting Jest compilation server")
+    (log/infof "HTTP server at http://localhost:%s" port)
 
     ; Run both async to not block, and run both in general to update the build status after
     ; the initial watch.
@@ -211,11 +312,11 @@
     ; `/compile` immediately (and before watching finishes), but in general, without calling
     ; `compile-and-update-build-status!` before the initial watch finishes, the status would
     ; never update from `:unknown` and any subsequent `/compile` API call would hang.
-    (as/go (compile-and-update-build-status! target))
-    (as/go (devtools.api/watch target {:autobuild false}))
+    (as/go (compile-and-update-build-status! :jest))
+    (as/go (devtools.api/watch :jest {:autobuild false}))
 
     (run-jetty
-     (-> (handler target)
+     (-> (handler :jest)
          (wrap-defaults site-defaults)
          (wrap-resource "")
          (wrap-params))
