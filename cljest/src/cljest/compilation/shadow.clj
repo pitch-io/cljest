@@ -1,17 +1,17 @@
 (ns cljest.compilation.shadow
-  (:require [cljest.compilation.fs :as fs]
-            [cljest.compilation.config :as config]
+  (:require [cljest.compilation.config :as config]
+            [cljest.compilation.fs :as fs]
             [clojure.core.async :as as]
             [shadow.build.classpath]
-            [shadow.cljs.model]
-            [shadow.cljs.util]
             [shadow.cljs.devtools.api :as devtools.api]
             [shadow.cljs.devtools.config :as devtools.config]
             [shadow.cljs.devtools.server :as devtools.server]
             [shadow.cljs.devtools.server.fs-watch :as devtools.server.fs-watch]
+            [shadow.cljs.devtools.server.reload-classpath :as devtools.server.reload-classpath]
             [shadow.cljs.devtools.server.runtime :as devtools.server.runtime]
             [shadow.cljs.devtools.server.system-bus :as devtools.server.system-bus]
-            [shadow.cljs.devtools.server.reload-classpath :as devtools.server.reload-classpath]))
+            [shadow.cljs.model]
+            [shadow.cljs.util]))
 
 (def ^:private build-target ::jest)
 

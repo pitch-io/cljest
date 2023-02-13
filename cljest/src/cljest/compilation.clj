@@ -1,8 +1,8 @@
 (ns cljest.compilation
   (:refer-clojure :exclude [compile])
   (:require [cljest.compilation.config :as config]
-            [cljest.compilation.shadow :as shadow]
             [cljest.compilation.server :as server]
+            [cljest.compilation.shadow :as shadow]
             [taoensso.timbre :as log]))
 
 (defn ^:private setup!

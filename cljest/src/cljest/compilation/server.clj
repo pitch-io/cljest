@@ -1,7 +1,7 @@
 (ns cljest.compilation.server
   (:require [cheshire.core :as cheshire]
-            [cljest.compilation.shadow :as shadow]
             [cljest.compilation.fs :as fs]
+            [cljest.compilation.shadow :as shadow]
             [clojure.core.async :as as]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.middleware.params :refer [wrap-params]]
