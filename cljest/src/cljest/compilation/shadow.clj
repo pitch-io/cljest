@@ -4,13 +4,20 @@
             [clojure.core.async :as as]
             [shadow.build.classpath]
             [shadow.cljs.devtools.api :as devtools.api]
+            [clojure.set :as set]
             [shadow.cljs.devtools.config :as devtools.config]
             [shadow.cljs.devtools.server :as devtools.server]
             [shadow.cljs.devtools.server.fs-watch :as devtools.server.fs-watch]
             [shadow.cljs.devtools.server.reload-classpath :as devtools.server.reload-classpath]
             [shadow.cljs.devtools.server.runtime :as devtools.server.runtime]
             [shadow.cljs.devtools.server.system-bus :as devtools.server.system-bus]
+            [shadow.cljs.devtools.server.worker :as devtools.server.worker]
+            [shadow.build.modules :as build.modules]
+            [shadow.cljs.devtools.server.worker.impl :as devtools.server.worker.impl]
+            [shadow.cljs.devtools.server.supervisor :as devtools.server.supervisor]
             [shadow.cljs.model]
+            [shadow.build :as build]
+            [taoensso.timbre :as log]
             [shadow.cljs.util]))
 
 (def ^:private build-target ::jest)
@@ -73,6 +80,59 @@
 
       msg)))
 
+(defn- get-build-worker
+  []
+  (let [{:keys [supervisor]} (devtools.server.runtime/get-instance!)]
+    (devtools.server.supervisor/get-worker supervisor build-target)))
+
+(defn- sync-worker!
+  []
+  (devtools.server.worker/sync! (get-build-worker)))
+
+(defmethod devtools.server.worker.impl/do-proc-control :update-build-entries
+  [worker-state {:keys [reply-to]}]
+
+  (let [entries (get-in @shadow-config [:builds build-target :entries])
+        result (-> worker-state
+                   (update :build-state assoc-in [::build/config :entries] entries)
+                   (update :build-state build.modules/analyze))]
+    (as/>!! reply-to :done)
+
+    result))
+
+(defn update-build-entries!
+  [{:keys [proc-control]}]
+  (let [reply-chan (as/chan)]
+    (as/>!! proc-control {:type :update-build-entries :reply-to reply-chan})
+    (as/<!! reply-chan)))
+
+(defn ^:private update-build-namespaces!
+  [events]
+  (let [entries-set (into #{} (get-in @shadow-config [:builds build-target :entries]))
+        new-entries (->> events
+                         (reduce (fn [entries {:keys [event ext name]}]
+                                   (let [ns (shadow.cljs.util/filename->ns name)]
+                                     (cond
+                                       (and (= :new event) (= "cljs" ext))
+                                       (conj entries ns)
+
+                                       (and (= :del event) (= "cljs" ext))
+                                       (set/difference entries #{ns})
+
+                                       :else
+                                       entries)))
+                                 entries-set)
+                         (into []))]
+    (swap! shadow-config assoc-in [:builds build-target :entries] new-entries)
+
+    (let [new-config (get-in @shadow-config [:builds build-target])]
+      (devtools.server.system-bus/publish! (get-system-bus) [:shadow.cljs.model/config-watch build-target] {:config new-config}))
+    (sync-worker!)
+
+    (update-build-entries! (get-build-worker))
+
+    (sync-worker!)))
+
 (defn- publish-file-changes!
   "For all directories being watched by the runtime instance, publish any changes in those dirs. If there are changes,
   waits for all processing done as a result of the change event.
@@ -93,9 +153,10 @@
                                 (devtools.server.system-bus/publish! (get-system-bus) ::updates-processed {})
                                 result))]
     (with-redefs [devtools.server.reload-classpath/process-updates new-process-updates]
-      (let [changes (fs/get-latest-changes)]
+      (let [changes (fs/get-latest-changes!)]
         (when (seq changes)
           (let [fs-watch-chan (as/chan 1)]
+            (update-build-namespaces! changes)
             ;; This event is listened to inside of `devtools.server.reload-classpath` as well, and is what triggers
             ;; the call to `process-updates`.
             (devtools.server.system-bus/publish! (get-system-bus) :shadow.cljs.model/cljs-watch {:updates changes})
