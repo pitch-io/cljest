@@ -1,13 +1,14 @@
 (ns cljest.setup
-  "The default setup file for cljest configurations in Jest."
+  "The default setup file for cljest configurations in Jest. If using a custom
+  setup require this file."
   (:require [applied-science.js-interop :as j]
             lambdaisland.deep-diff2))
 
-(defn- matcher [matcher]
+(defn ^:private matcher [matcher]
   (fn [& args]
     (clj->js (apply matcher args))))
 
-(defn- jest-fn-called-with
+(defn ^:private jest-fn-called-with
   "Asserts that the provided `spy` was ever called with the provided `args`."
   [spy args]
   (let [calls (j/get-in spy [:mock :calls])
@@ -20,10 +21,10 @@
       {:pass false
        :message #(str "Expected spy to be called with " args)})))
 
-(defn- jest-is
+(defn ^:private jest-is
   [body-fn formatter-fn]
   (let [value (body-fn)]
-    (if (or value (= value js/undefined))
+    (if value
       {:pass true}
       {:pass false
        :message formatter-fn})))

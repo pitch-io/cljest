@@ -6,13 +6,22 @@
             ;; it should go in cljest.auxiliary
             cljest.auxiliary))
 
+(def ^:dynamic *inside-is?* false)
+(def ^:dynamic *is-body-negated?* false)
+
 (defn spy
+  "An unused spy, optionally taking `mock-implementation`, a function that will be called
+  when this spy is called."
   ([] (.fn jest))
-  ([mock] (.mockImplementation (.fn jest) mock)))
+  ([mock-implementation] (.mockImplementation (.fn jest) mock-implementation)))
 
 (defn spy-on
-  "Creates a mock function similar to jest.fn but also tracks calls to (.-method-name object)
-  Returns a Jest mock function."
+  "Creates a mock function similar to jest.fn but also tracks calls to (.-method-name object).
+
+  Essentially it overrides a specific property on an object while preserving the original
+  function.
+
+  See https://jestjs.io/docs/jest-object#jestspyonobject-methodname for more details."
   ([object method-name]
    (spy-on object method-name js/undefined))
   ([object method-name access-type]

@@ -1,11 +1,12 @@
 (ns cljest.core
-  (:require [cljest.format :as formatter]
+  (:require [cljest.compilation.config :as config]
+            [cljest.format :as format]
             [cljs.analyzer.api :as analyzer.api]
             cljs.env))
 
-;; TODO(jo-sm): do we want to use a `jest-config.edn` or similar file?
-(def user-defined-formatters-ns (some-> (get-in @cljs.env/*compiler* [:options :external-config :jest :formatters-ns])
-                                        symbol))
+(def ^:private user-defined-formatters-ns (some-> (config/get-config!)
+                                                  (get :formatters-ns)
+                                                  symbol))
 
 (when user-defined-formatters-ns
   (require `[~user-defined-formatters-ns]))
@@ -46,27 +47,6 @@
                           (if (nil? last-call-result#)
                             js/undefined
                             last-call-result#))))))
-
-(defmacro is
-  "A generic assertion macro for Jest. Asserts that `body` is truthy.
-
-  Note: This does not work exactly like `clojure.test/is`. It does not accept `thrown?` or `thrown-with-msg?`.
-
-  Example:
-
-  (it \"should be true\"
-    (is (= true (my-fn :some-keyword)))"
-  [full-body]
-  ;; TODO(jo-sm): support (is true)
-  (let [negated? (= 'not (first full-body))
-        body (if negated?
-               (second full-body)
-               full-body)
-        matcher-sym (first body)
-        resolved-symbol-name (get (analyzer.api/resolve &env matcher-sym) :name 'unknown-symbol)]
-    ;; For the actual assertion, we want the full body, but for the formatter, we want to pass the possibly inner part
-    ;; of (not (...)) to simplify writing the macro.
-    `(cljest.core/is-matcher #(do ~full-body) ~(formatter/format resolved-symbol-name body negated?))))
 
 (defmacro it
   "A single test case."
@@ -144,3 +124,46 @@
   `(do
      (doseq ~seq-exprs (only ~name ~@body))
      js/undefined))
+
+(defn ^:private value->resolved-sym
+  "Resolves the given value to its fully qualified name. If it's a primitive (like true, false, a number) returns
+  'primitive."
+  [env value]
+  (if (symbol? value)
+    (get (analyzer.api/resolve env value) :name 'unknown-symbol)
+    'primitive))
+
+(defmacro ^:private primitive-is
+  [form negated?]
+  (let [resolved-sym (value->resolved-sym &env form)]
+    `(binding [cljest.core/*inside-is?* true]
+       (cljest.core/is-matcher #(do ~form) ~(format/formatter resolved-sym form negated?)))))
+
+(defmacro ^:private complex-is
+  [forms]
+  (let [negated? (= 'not (first forms))
+        body (if negated?
+               (second forms)
+               forms)
+        resolved-sym (if (seq? body)
+                       (value->resolved-sym &env (first body))
+                       (value->resolved-sym &env body))]
+    ;; For the actual assertion, we want the full body, but for the formatter, we want to pass the possibly inner part
+    ;; of (not (...)) to simplify writing the macro.
+    `(binding [cljest.core/*inside-is?* true
+               cljest.core/*is-body-negated?* ~negated?]
+       (cljest.core/is-matcher #(do ~forms) ~(format/formatter resolved-sym body negated?)))))
+
+(defmacro is
+  "A generic assertion macro for Jest. Asserts that `form` is truthy.
+
+  Note: This does not work exactly like `clojure.test/is`. It does not accept `thrown?` or `thrown-with-msg?`.
+
+  Example:
+
+  (it \"should be true\"
+    (is (= true (my-fn :some-keyword)))"
+  [form]
+  (if (seq? form)
+    `(complex-is ~form)
+    `(primitive-is ~form false)))

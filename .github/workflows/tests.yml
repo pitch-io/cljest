@@ -32,7 +32,11 @@ jobs:
       - name: Link jest-preset-cljest
         run: npm link ../jest-preset-cljest
       - name: Install dependencies
-        run: make install
+        run: |
+          make install
+          cd node_modules/jest-preset-cljest
+          npm install
+          cd ../..
       - name: Lint
         run: make lint
       - name: Compile and run cljest tests

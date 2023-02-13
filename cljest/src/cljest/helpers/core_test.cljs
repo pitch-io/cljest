@@ -1,4 +1,4 @@
-(ns cljest.helpers.core-spec
+(ns cljest.helpers.core-test
   (:require [cljest.core :refer [describe is it]]
             [cljest.helpers.core :as h]
             [cyrik.cljs-macroexpand :refer [cljs-macroexpand-all] :rename {cljs-macroexpand-all macroexpand-all}]))
@@ -79,10 +79,11 @@
                                             (-> (js/Promise.resolve)
                                                 (.then (fn []
                                                          (fn-3 name-1)
-                                                         (let [name-1-1 :kw-1]
-                                                           (-> (js/Promise.resolve)
-                                                               (.then (fn []
-                                                                        (fn-4 name-1-1)))))))))))
+                                                         (js/Promise.all [:kw-1 promise-1])))
+                                                (.then (fn [name-1-1 name-2-2]
+                                                         (-> (js/Promise.resolve)
+                                                             (.then (fn []
+                                                                      (fn-4 name-2-2))))))))))
 
                                  (.then (fn []
                                           (fn-5)))))
@@ -91,7 +92,8 @@
                                       (fn-2)
                                       (let [name-1 :kw]
                                         (fn-3 name-1)
-                                        (let [name-1-1 :kw-1]
-                                          (fn-4 name-1-1)))
+                                        (let [name-1-1 :kw-1
+                                              name-2-2 (await promise-1)]
+                                          (fn-4 name-2-2)))
                                       (fn-5)))))))
 
