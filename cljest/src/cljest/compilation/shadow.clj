@@ -22,6 +22,7 @@
   (atom (merge devtools.config/default-config {:fs-watch {:loop-wait Integer/MAX_VALUE}})))
 
 (defn install-config!
+  "Alters `shadow.cljs.devtools.config/load-cljs-edn` to use our internal config atom rather than a file."
   []
   ;; Some functions either do not allow passing the config or just call `load-cljs-edn`, which means we have no choice but to
   ;; forcibly override the function to return the latest value of our internal config atom.
@@ -127,6 +128,10 @@
   []
   (publish-file-changes!)
   (devtools.api/watch-compile! build-target))
+
+(defn compile!
+  []
+  (devtools.api/compile build-target))
 
 (defn start-watching
   []

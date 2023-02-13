@@ -33,8 +33,9 @@
   (server/start-server! port))
 
 (defn compile
-  []
-  (log/info "Not implemented yet"))
+  [_]
+  (setup!)
+  (shadow/compile!))
 
 (defn -main
   "An alias for watch mode."

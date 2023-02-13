@@ -58,8 +58,7 @@
       (str "An unexpected error happened while attempting to parse " pretty-path ". Please report this as a bug and include your config in the report."))))
 
 (defn ^:private coerce-config-with-pretty-exception!
-  "Coerces the raw config based on the Malli schema. If it fails coercion, the exception is printed to the terminal in
-  a human friendly way."
+  "Coerces the raw config based on the Malli schema. If it fails coercion, a human friendly exception is thrown."
   [raw]
   (try
     (malli/coerce config-schema raw malli.transform/default-value-transformer)
@@ -85,7 +84,7 @@
       (reset! !config config))))
 
 (defn get-config!
-  "Returns the coerced config. If it hasn't been loaded it, load it."
+  "Returns the coerced config. If it hasn't been loaded yet, load it."
   []
   (if-not @!config
     (load-config!)

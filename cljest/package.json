@@ -5,7 +5,8 @@
   "scripts": {
     "jest:watch": "jest --watch",
     "jest:ci": "jest --ci",
-    "jest:server": "clj -X cljest.compilation/watch :port 9111"
+    "jest:server": "clj -X cljest.compilation/watch :port 9111",
+    "jest:compile": "clj -X cljest.compilation/compile"
   },
   "author": "Pitch Software GmbH",
   "license": "MIT",
