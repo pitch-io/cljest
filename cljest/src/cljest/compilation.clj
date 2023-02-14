@@ -2,8 +2,10 @@
   (:refer-clojure :exclude [compile])
   (:require [cljest.compilation.config :as config]
             [cljest.compilation.server :as server]
-            [cljest.compilation.shadow :as shadow]
-            [taoensso.timbre :as log]))
+            [cljest.compilation.shadow :as shadow]))
+
+;; TODO:
+;; - Expose a preloads check endpoint, to check if the preloads NS is ready or not
 
 (defn ^:private setup!
   "Performs setup that is shared between watch and compile mode.

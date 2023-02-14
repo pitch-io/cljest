@@ -1,5 +1,6 @@
 (ns cljest.compilation.shadow
   (:require [cljest.compilation.config :as config]
+            [cljest.compilation.utils :as utils]
             [cljest.compilation.fs :as fs]
             [clojure.core.async :as as]
             [shadow.build.classpath]
@@ -106,17 +107,33 @@
     (as/>!! proc-control {:type :update-build-entries :reply-to reply-chan})
     (as/<!! reply-chan)))
 
+(defn ^:private event-for-test-file?
+  [event]
+  (let [{filename :name ext :ext} event
+        ns (shadow.cljs.util/filename->ns filename)]
+    (and (= "cljs" ext) (utils/test-ns? ns))))
+
+(defn ^:private added-test-event?
+  [event]
+  (let [{event-kind :event} event]
+    (and (event-for-test-file? event) (= :new event-kind))))
+
+(defn ^:private removed-test-event?
+  [event]
+  (let [{event-kind :event} event]
+    (and (event-for-test-file? event) (= :del event-kind))))
+
 (defn ^:private update-build-namespaces!
   [events]
   (let [entries-set (into #{} (get-in @shadow-config [:builds build-target :entries]))
         new-entries (->> events
-                         (reduce (fn [entries {:keys [event ext name]}]
-                                   (let [ns (shadow.cljs.util/filename->ns name)]
+                         (reduce (fn [entries {filename :name :as event}]
+                                   (let [ns (shadow.cljs.util/filename->ns filename)]
                                      (cond
-                                       (and (= :new event) (= "cljs" ext))
+                                       (added-test-event? event)
                                        (conj entries ns)
 
-                                       (and (= :del event) (= "cljs" ext))
+                                       (removed-test-event? event)
                                        (set/difference entries #{ns})
 
                                        :else
