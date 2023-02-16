@@ -126,8 +126,8 @@
                               {:current (group)
                                :rest (conj rest
                                            (group
-                                             (conj forms (list 'let (second form) (concat ['cljest.helpers.core/async] (nthrest form 2))))
-                                             bindings))}
+                                            (conj forms (list 'let (second form) (concat ['cljest.helpers.core/async] (nthrest form 2))))
+                                            bindings))}
 
                               ;; Otherwise, add the current form to the current group's forms.
                               :else
