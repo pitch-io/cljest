@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "jest:watch": "jest --watch",
-    "jest:ci": "jest --ci",
+    "jest:ci": "CI=true jest --ci",
     "jest:server": "clj -X cljest.compilation/watch :port 9111",
     "jest:compile": "clj -X cljest.compilation/compile"
   },
