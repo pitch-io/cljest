@@ -1,4 +1,4 @@
 {:group-id "com.pitch"
  :artifact-id "cljest"
  :version "0.9.0-alpha1"
- :scm-url "https://github.com/pitch-io/cljest/tree/master/cljest"}
+ :scm-url "https://github.com/pitch-io/cljest/tree/6398c16f6bc9addc395c07e8c74ec0a7d087456e/cljest"}
