@@ -1,6 +1,6 @@
 {
   "name": "cljest",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
   "scripts": {
     "jest:watch": "jest --watch",
@@ -13,6 +13,6 @@
   "devDependencies": {
     "jest": "^29.2.1",
     "jest-junit": "^14.0.1",
-    "jest-preset-shadow": "pitch-io/cljest#df5df778a7662a29fe3ccc065dfb7df12ef4f0b9"
+    "jest-preset-cljest": "^0.9.0-alpha1"
   }
 }
