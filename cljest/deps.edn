@@ -1,5 +1,6 @@
         ;; Library deps
-{:deps {appliedscience/js-interop {:mvn/version "0.2.3"}
+{:deps {appliedscience/deps-library {:mvn/version "0.3.4"}
+        appliedscience/js-interop {:mvn/version "0.2.3"}
         cheshire/cheshire {:mvn/version "5.10.2"}
         cljfmt/cljfmt {:mvn/version "0.9.2"}
         com.taoensso/timbre {:mvn/version "5.2.1"}
