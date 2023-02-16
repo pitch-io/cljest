@@ -1,4 +1,4 @@
-name: Lint and run tests
+name: "jest-preset-cljest: Lint and run tests"
 
 on:
   push:
@@ -12,8 +12,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  lint-and-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jest-preset-cljest
 
     strategy:
       matrix:
