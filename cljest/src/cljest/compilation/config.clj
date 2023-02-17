@@ -11,6 +11,9 @@
 (def ^:private config-schema
   [:map
    {:closed true}
+   [:compiler-options {:optional true} [:map
+                                        {:closed true}
+                                        [:closure-defines :map]]]
    [:test-src-dirs [:sequential :string]]
    [:ns-suffixes [:sequential {:default ['-test]} :symbol]]
    [:mode [:enum {:error/message "only :all is allowed" :default :all} :all]]
@@ -66,16 +69,16 @@
       (let [explanation (ex-data e)
             errors (get-in explanation [:data :explain :errors])
             num-errors (count errors)]
-        (throw (Exception. (str (bold-red (str "Error: Your jest-config.edn file had " num-errors " " (pluralize "error" num-errors) "."))
+        (throw (Exception. (str (bold-red (str "Error: Your cljest.edn file had " num-errors " " (pluralize "error" num-errors) "."))
                                 "\n\n"
                                 (str/join "\n" (map humanize-error errors)))))))))
 
 (defn- load-config!
-  "Loads the jest-config.edn file and coerces based on the Malli schema."
+  "Loads the cljest.edn file and coerces based on the Malli schema."
   []
-  (let [config-io (io/file "jest-config.edn")]
+  (let [config-io (io/file "cljest.edn")]
     (when-not (.exists config-io)
-      (throw (Exception. (str (bold-red "Error: A jest-config.edn should exist in the same directory as you started the cljest server.")
+      (throw (Exception. (str (bold-red "Error: A cljest.edn should exist in the same directory as you started the cljest server.")
                               " "
                               "This file should be located next to your jest.config.js file (or equivalent)."))))
 
