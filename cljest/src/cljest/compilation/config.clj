@@ -11,6 +11,8 @@
 (def ^:private config-schema
   [:map
    {:closed true}
+   [:compiler-options {:optional true} [:map
+                                        [:closure-defines :map]]]
    [:test-src-dirs [:sequential :string]]
    [:ns-suffixes [:sequential {:default ['-test]} :symbol]]
    [:mode [:enum {:error/message "only :all is allowed" :default :all} :all]]

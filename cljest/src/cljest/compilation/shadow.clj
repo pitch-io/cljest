@@ -189,14 +189,15 @@
 
 (defn generate-build! []
   (let [test-nses (fs/get-test-files-from-src-dirs)
-        {:keys [preloads-ns]} (config/get-config!)
+        {:keys [preloads-ns compiler-options]} (config/get-config!)
         build-definition {:build-id build-target
                           :target :npm-module
                           :build-options {:greedy true :dynamic-resolve true}
-                          :compiler-options {:output-feature-set :es8
-                                             ; We want to call functions using `.call` so that spying works as expected
-                                             :static-fns false
-                                             :infer-externs false}
+                          :compiler-options (merge {:output-feature-set :es8
+                                                   ; We want to call functions using `.call` so that spying works as expected
+                                                    :static-fns false
+                                                    :infer-externs false}
+                                                   compiler-options)
                           :output-dir ".jest"
                           :devtools {:enabled false}
                           :entries (into [] (conj test-nses preloads-ns))}]
