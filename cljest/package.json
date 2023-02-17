@@ -14,6 +14,6 @@
   "devDependencies": {
     "jest": "^29.2.1",
     "jest-junit": "^14.0.1",
-    "jest-preset-cljest": "^0.9.0-alpha1"
+    "jest-preset-cljest": "file:../jest-preset-cljest"
   }
 }
