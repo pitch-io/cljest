@@ -1,9 +1,7 @@
 const hasteImpl = require('./jest.hasteImpl')
 
 jest.mock('./utils', () => ({
-  getProjectConfig: () => ({
-    roots: ['/root_a', '/root_b'],
-  }),
+  getPathsFromCljestConfig: () => ['/root_a', '/root_b'],
 }))
 
 describe('getHasteName', () => {

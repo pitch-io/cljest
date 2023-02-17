@@ -1,34 +1,20 @@
 const fetch = require('node-fetch')
-const { getProjectConfig } = require('./utils')
+const { getServerUrl } = require('./utils')
 
-async function fetchUntilAvailable(serverUrl) {
+async function fetchUntilAvailable() {
   if (process.env.CI) {
     return
   }
 
   try {
-    await fetch(`${serverUrl}/compile`)
+    await fetch(`${getServerUrl()}/compile`)
   } catch (_) {
     await new Promise((resolve) => setTimeout(resolve, 50))
 
-    return fetchUntilAvailable(serverUrl)
+    return fetchUntilAvailable()
   }
 }
 
 module.exports = async function globalSetup() {
-  const { globals } = await getProjectConfig()
-
-  if (!globals.shadowOutputDir) {
-    throw new Error(
-      'config.globals.shadowOutputDir must be set to the output-dir of your :jest shadow-cljs.edn build.'
-    )
-  }
-
-  if (!globals.serverUrl) {
-    throw new Error(
-      'config.globals.serverUrl must be set to the server URL of the shadow compilation server. E.g. http://localhost:9001'
-    )
-  }
-
-  await fetchUntilAvailable(globals.serverUrl)
+  await fetchUntilAvailable()
 }

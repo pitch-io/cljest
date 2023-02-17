@@ -6,9 +6,10 @@ const {
 } = require('jest-watcher')
 const chalk = require('chalk')
 const fs = require('fs')
-const { getProjectConfig } = require('./utils')
+const { generateTestRegexes, getPathsFromCljestConfig } = require('./utils')
 
-const { roots, testRegex } = getProjectConfig()
+const roots = getPathsFromCljestConfig()
+const testRegexes = generateTestRegexes()
 
 function* traverseDirectory(dir) {
   const dirents = fs.readdirSync(dir, { withFileTypes: true })
@@ -81,7 +82,7 @@ class NamespaceWatchPlugin {
     const possibleNamespaces = roots.reduce((acc, root) => {
       // Assume root is absolute path
       for (const filename of traverseDirectory(root)) {
-        if (testRegex.some((regex) => new RegExp(regex).test(filename))) {
+        if (testRegexes.some((regex) => new RegExp(regex).test(filename))) {
           acc.push(
             filename.replace(`${root}/`, '').slice(0, -5).replace(/_/g, '-').replace(/\//g, '.')
           )

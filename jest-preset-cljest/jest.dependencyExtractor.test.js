@@ -1,9 +1,7 @@
 const dependencyExtractor = require('./jest.dependencyExtractor')
 
 jest.mock('./utils', () => ({
-  getProjectConfig: () => ({
-    roots: ['/root_a', '/root_b'],
-  }),
+  getPathsFromCljestConfig: () => ['/root_a', '/root_b'],
 }))
 
 describe('extract', () => {

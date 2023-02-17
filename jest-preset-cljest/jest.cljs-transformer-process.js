@@ -2,11 +2,10 @@ const { runAsWorker } = require('synckit')
 const fetch = require('node-fetch')
 const path = require('path')
 const fs = require('fs')
-const { getProjectConfig } = require('./utils')
+const { getServerUrl, getBuildDir } = require('./utils')
 
-const {
-  globals: { shadowOutputDir, serverUrl },
-} = getProjectConfig()
+const serverUrl = getServerUrl()
+const buildDir = getBuildDir()
 
 function getPrecompiledFile(sourceText) {
   const namespace = sourceText.match(/ns\s([\w\.\-]+)/)[1]
@@ -14,8 +13,8 @@ function getPrecompiledFile(sourceText) {
 
   return {
     status: 'success',
-    code: fs.readFileSync(path.resolve(shadowOutputDir, filename)).toString(),
-    map: fs.readFileSync(path.resolve(shadowOutputDir, `${filename}.map`)).toString(),
+    code: fs.readFileSync(path.resolve(buildDir, filename)).toString(),
+    map: fs.readFileSync(path.resolve(buildDir, `${filename}.map`)).toString(),
   }
 }
 
@@ -42,8 +41,8 @@ async function getServerCompiledFile(sourceText, sourcePath) {
 
   return {
     status: 'success',
-    code: fs.readFileSync(path.resolve(shadowOutputDir, filename)).toString(),
-    map: fs.readFileSync(path.resolve(shadowOutputDir, `${filename}.map`)).toString(),
+    code: fs.readFileSync(path.resolve(buildDir, filename)).toString(),
+    map: fs.readFileSync(path.resolve(buildDir, `${filename}.map`)).toString(),
   }
 }
 
