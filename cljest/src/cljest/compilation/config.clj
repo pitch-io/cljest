@@ -12,6 +12,7 @@
   [:map
    {:closed true}
    [:compiler-options {:optional true} [:map
+                                        {:closed true}
                                         [:closure-defines :map]]]
    [:test-src-dirs [:sequential :string]]
    [:ns-suffixes [:sequential {:default ['-test]} :symbol]]
