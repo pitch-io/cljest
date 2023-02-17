@@ -5,7 +5,7 @@
   "scripts": {
     "jest:watch": "jest --watch",
     "jest:ci": "CI=true jest --ci",
-    "jest:server": "clj -X cljest.compilation/watch :port 9111",
+    "jest:server": "clj -X cljest.compilation/watch",
     "jest:compile": "clj -X cljest.compilation/compile",
     "publish": "clj -M -m deps-library.release"
   },

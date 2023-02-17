@@ -30,9 +30,9 @@
 
 (defn watch
   "Runs cljest in watch mode, which starts a server and compiles test files on demand."
-  [{:keys [port]}]
+  [{}]
   (setup!)
-  (server/start-server! port))
+  (server/start-server!))
 
 (defn compile
   [_]
@@ -41,6 +41,5 @@
 
 (defn -main
   "An alias for watch mode."
-  [raw-port]
-  (let [port (Integer/parseInt raw-port)]
-    (watch {:port port})))
+  []
+  (watch {}))

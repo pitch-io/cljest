@@ -1,5 +1,6 @@
 (ns cljest.compilation.server
   (:require [cheshire.core :as cheshire]
+            [cljest.compilation.config :as config]
             [cljest.compilation.fs :as fs]
             [cljest.compilation.shadow :as shadow]
             [clojure.core.async :as as]
@@ -93,27 +94,28 @@
     {:status 404}))
 
 (defn start-server!
-  [port]
+  []
   (shadow/start-server!)
   (fs/setup-watchers!)
 
-  (log/infof "Starting Jest compilation server")
-  (log/infof "HTTP server at http://localhost:%s" port)
+  (let [{:keys [port]} (config/get-config!)]
+    (log/infof "Starting Jest compilation server")
+    (log/infof "HTTP server at http://localhost:%s" port)
 
-  ; Run both async to not block, and run both in general to update the build status after
-  ; the initial watch.
-  ;
-  ; In regular operation with Jest, this probably wouldn't happen because it would call
-  ; `/compile` immediately (and before watching finishes), but in general, without calling
-  ; `compile-and-update-build-status!` before the initial watch finishes, the status would
-  ; never update from `:unknown` and any subsequent `/compile` API call would hang.
-  (as/go (compile-and-update-build-status!))
-  (as/go (shadow/start-watching))
+    ; Run both async to not block, and run both in general to update the build status after
+    ; the initial watch.
+    ;
+    ; In regular operation with Jest, this probably wouldn't happen because it would call
+    ; `/compile` immediately (and before watching finishes), but in general, without calling
+    ; `compile-and-update-build-status!` before the initial watch finishes, the status would
+    ; never update from `:unknown` and any subsequent `/compile` API call would hang.
+    (as/go (compile-and-update-build-status!))
+    (as/go (shadow/start-watching))
 
-  (run-jetty
-   (-> handler
-       (wrap-defaults site-defaults)
-       (wrap-resource "")
-       (wrap-params))
-   {:port port
-    :join? false}))
+    (run-jetty
+     (-> handler
+         (wrap-defaults site-defaults)
+         (wrap-resource "")
+         (wrap-params))
+     {:port port
+      :join? false})))
