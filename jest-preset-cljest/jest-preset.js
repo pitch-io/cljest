@@ -1,6 +1,9 @@
 const path = require('path')
 
+const { getBuildDir, getPathsFromCljestConfig, generateTestRegexes } = require('./utils')
+
 module.exports = {
+  testRegex: generateTestRegexes(),
   moduleFileExtensions: ['clj', 'cljs', 'js'],
   globalSetup: path.resolve(__dirname, 'jest.globalSetup.js'),
   resolver: path.resolve(__dirname, 'jest.resolver.js'),
@@ -12,4 +15,6 @@ module.exports = {
   haste: {
     hasteImplModulePath: path.resolve(__dirname, 'jest.hasteImpl.js'),
   },
+  modulePaths: [getBuildDir()],
+  roots: getPathsFromCljestConfig(),
 }

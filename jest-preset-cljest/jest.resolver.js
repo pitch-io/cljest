@@ -1,15 +1,13 @@
 const path = require('path')
-const { getProjectConfig } = require('./utils')
+const { getBuildDir } = require('./utils')
 
-const {
-  globals: { shadowOutputDir },
-} = getProjectConfig()
+const buildDir = getBuildDir()
 
 module.exports = function (filePath, options) {
   try {
     return options.defaultResolver(filePath, options)
   } catch (e) {
-    const absPath = path.resolve(shadowOutputDir, filePath)
+    const absPath = path.resolve(buildDir, filePath)
 
     return options.defaultResolver(absPath, options)
   }

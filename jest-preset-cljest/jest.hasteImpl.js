@@ -1,14 +1,14 @@
-const { getProjectConfig } = require('./utils')
+const { getPathsFromCljestConfig } = require('./utils')
 
-const { roots } = getProjectConfig()
+const paths = getPathsFromCljestConfig()
 
 module.exports = {
   getHasteName(filePath) {
-    const root = roots.find((root) => filePath.startsWith(root))
+    const foundPath = paths.find((root) => filePath.startsWith(root))
 
-    if (root) {
+    if (foundPath) {
       const baseHasteName = filePath
-        .split(`${root}/`)[1]
+        .split(`${foundPath}/`)[1]
         .replace(/\.clj(s|c)?/, '')
         .replace(/\_/g, '-')
         .replace(/\//g, '.')

@@ -14,6 +14,7 @@
    [:compiler-options {:optional true} [:map
                                         {:closed true}
                                         [:closure-defines :map]]]
+   [:port {:default 9003} :int]
    [:test-src-dirs [:sequential :string]]
    [:ns-suffixes [:sequential {:default ['-test]} :symbol]]
    [:mode [:enum {:error/message "only :all is allowed" :default :all} :all]]
@@ -53,6 +54,9 @@
 
       (and (= :string (malli/type schema)) (not (string? value)))
       (str "The value at " pretty-path " should be a string but is not. Value: " pretty-value)
+
+      (and (= :int (malli/type schema)) (not (int? value)))
+      (str "The value at " pretty-path " should be an integer but is not. Value: " pretty-value)
 
       (and (= :symbol (malli/type schema)) (not (symbol? value)))
       (str "The value at " pretty-path " should be a symbol but is not. Value: " pretty-value)

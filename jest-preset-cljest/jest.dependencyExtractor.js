@@ -1,8 +1,6 @@
-const { getProjectConfig } = require('./utils')
 const fs = require('fs')
 const crypto = require('crypto')
-
-const { roots } = getProjectConfig()
+const { getPathsFromCljestConfig } = require('./utils')
 
 function getDependenciesFromTokens(tokens) {
   const result = []
@@ -99,7 +97,9 @@ function getDepsForOpening(code, opening) {
 
 module.exports = {
   extract(code, filePath) {
-    if (!roots.some((root) => filePath.startsWith(root))) {
+    const testSrcPaths = getPathsFromCljestConfig()
+
+    if (!testSrcPaths.some((p) => filePath.startsWith(p))) {
       return []
     }
 
