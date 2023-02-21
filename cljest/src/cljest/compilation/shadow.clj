@@ -3,6 +3,7 @@
             [cljest.compilation.fs :as fs]
             [cljest.compilation.utils :as utils]
             [clojure.core.async :as as]
+            [clojure.java.io :as io]
             [clojure.set :as set]
             [shadow.build :as build]
             [shadow.build.classpath]
@@ -30,10 +31,11 @@
   (atom (merge devtools.config/default-config {:fs-watch {:loop-wait Integer/MAX_VALUE}})))
 
 (defn install-config!
-  "Alters `shadow.cljs.devtools.config/load-cljs-edn` to use our internal config atom rather than a file."
+  "Alters `shadow.cljs.devtools.config/load-cljs-edn` to use our internal config atom rather than a file.
+
+  Some functions either do not allow passing the config or just call `load-cljs-edn`, which means we have no choice but to
+  forcibly override the function to return the latest value of our internal config atom."
   []
-  ;; Some functions either do not allow passing the config or just call `load-cljs-edn`, which means we have no choice but to
-  ;; forcibly override the function to return the latest value of our internal config atom.
   (alter-var-root (var devtools.config/load-cljs-edn) (fn [& _] (fn [& _] @shadow-config))))
 
 (defn ^:private get-runtime-instance!
@@ -41,27 +43,28 @@
   (devtools.server.runtime/get-instance!))
 
 (defn start-server!
+  "Starts the shadow dev server, and stops the automatically set up file watchers."
   []
   (devtools.server/start! @shadow-config)
   (devtools.server.fs-watch/stop (:cljs-watch (get-runtime-instance!))))
 
-(defn- get-system-bus
+(defn ^:private get-system-bus
   "Gets the system bus from the runtime instance. Used for pub/sub events that happen during the lifecycle of
   the server."
   []
   (get @devtools.server.runtime/instance-ref :system-bus))
 
-(defn- sub-to-system-bus-topic
+(defn ^:private sub-to-system-bus-topic
   "Subscribe to `topic` from the system bus using `chan`."
   [chan topic]
   (devtools.server.system-bus/sub (get-system-bus) topic chan))
 
-(defn- unsub-to-system-bus-topic
+(defn ^:private unsub-to-system-bus-topic
   "Unsubscribe to `topic` from the system bus using `chan`."
   [chan topic]
   (devtools.server.system-bus/unsub (get-system-bus) topic chan))
 
-(defn- get-1st-msg-on-chan
+(defn ^:private get-1st-msg-on-chan
   "Subscribes to `topic` using `chan`, gets the first message that the channel listens for,
   and then unsubscribes, returning message. If `timeout-ms` is provided will wait up to that
   number of ms for a message or return `nil`.
@@ -81,12 +84,12 @@
 
       msg)))
 
-(defn- get-build-worker
+(defn ^:private get-build-worker
   []
   (let [{:keys [supervisor]} (devtools.server.runtime/get-instance!)]
     (devtools.server.supervisor/get-worker supervisor build-target)))
 
-(defn- sync-worker!
+(defn ^:private sync-worker!
   []
   (devtools.server.worker/sync! (get-build-worker)))
 
@@ -101,7 +104,8 @@
 
     result))
 
-(defn update-build-entries!
+(defn ^:private update-build-entries!
+  "Called when the shadow config is updated to update the worker's build entries."
   [{:keys [proc-control]}]
   (let [reply-chan (as/chan)]
     (as/>!! proc-control {:type :update-build-entries :reply-to reply-chan})
@@ -150,14 +154,15 @@
 
     (sync-worker!)))
 
-(defn- publish-file-changes!
-  "For all directories being watched by the runtime instance, publish any changes in those dirs. If there are changes,
-  waits for all processing done as a result of the change event.
+(defn ^:private publish-file-changes!
+  "For all directories being watched, publish any changes in those dirs. If there are changes, waits for all processing
+  done as a result of the change event.
 
-  This is done in this way, rather than watching normally, primarily because Jest includes a file watcher and we utilize
-  its watching capabilities to call the API and we don't want to also use shadow's. However, due to the way shadow works,
+  This is done in this way, rather than watching normally in shadow, primarily because Jest includes a file watcher and
+  we utilize its watching capabilities to call the API and don't want to use shadow's. However, due to the way shadow works,
   we do need to check what files have changed and let the worker(s) know so that when the next compilation happens, the
-  worker actually attempts to compile the file. Without this the compilation would not be controllable and consistent."
+  worker actually attempts to compile the right file(s). Without this the compilation would not be controllable and consistent
+  from the perspective of the Jest process."
   []
   ;; Inside of `shadow-cljs`, the actual code that handles emitting when something actually changes lives in the function
   ;; `devtools.server.reload-classpath/process-updates`. This function performs some calculations and, if it detects any
@@ -181,15 +186,23 @@
             (get-1st-msg-on-chan fs-watch-chan ::updates-processed)))))))
 
 (defn get-compilation-result
-  "Gets the next successful or failure compilation result for `target`."
+  "Gets the next :build-complete or :build-failure result for compilation of ::jest."
   []
   (let [compilation-chan (as/chan 1 (filter #(contains? #{:build-complete :build-failure} (:type %))))]
 
     (get-1st-msg-on-chan compilation-chan [:shadow.cljs.model/worker-output build-target])))
 
-(defn generate-build! []
+(defn get-build-directory
+  "Returns the absolute path of the build directory."
+  []
+  (let [dir (io/file ".jest")]
+    (.getCanonicalPath dir)))
+
+(defn generate-build!
+  "Generates an initial build based on the test namespaces, setup namespace, and compiler options."
+  []
   (let [test-nses (fs/get-test-files-from-src-dirs)
-        {:keys [preloads-ns compiler-options]} (config/get-config!)
+        {:keys [setup-ns compiler-options]} (config/get-config!)
         build-definition {:build-id build-target
                           :target :npm-module
                           :build-options {:greedy true :dynamic-resolve true}
@@ -200,15 +213,17 @@
                                                    compiler-options)
                           :output-dir ".jest"
                           :devtools {:enabled false}
-                          :entries (into [] (conj test-nses preloads-ns))}]
+                          :entries (into [] (conj test-nses setup-ns))}]
     (swap! shadow-config assoc-in [:builds build-target] build-definition)))
 
 (defn publish-and-compile!
+  "Publishes and watched directory fs changes and triggers a compilation. Blocks until compilation is complete."
   []
   (publish-file-changes!)
   (devtools.api/watch-compile! build-target))
 
 (defn compile!
+  "Triggers a compilation."
   []
   (devtools.api/compile build-target))
 

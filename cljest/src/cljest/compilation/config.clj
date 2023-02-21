@@ -18,7 +18,7 @@
    [:test-src-dirs [:sequential :string]]
    [:ns-suffixes [:sequential {:default ['-test]} :symbol]]
    [:mode [:enum {:error/message "only :all is allowed" :default :all} :all]]
-   [:preloads-ns [:symbol {:default 'cljest.preloads}]]])
+   [:setup-ns [:symbol {:default 'cljest.setup}]]])
 
 (defn ^:private read-edn-safely
   "Given a File instance, reads it and attempts to parse as EDN. If it fails, returns nil rather than throwing."
