@@ -1,6 +1,6 @@
 {
   "name": "jest-preset-cljest",
-  "version": "0.9.0-alpha1",
+  "version": "1.0.0-alpha2",
   "description": "A preset for Jest to allow compiling ClojureScript tests",
   "main": "jest-preset.js",
   "scripts": {},
