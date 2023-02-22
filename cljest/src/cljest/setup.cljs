@@ -1,4 +1,5 @@
-(ns cljest.preloads
+(ns cljest.setup
+  "The default setup file for cljest configurations in Jest."
   (:require [applied-science.js-interop :as j]
             lambdaisland.deep-diff2))
 

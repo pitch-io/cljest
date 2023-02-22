@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { createSyncFn } = require("synckit");
 const { parseEDNString } = require("edn-data");
 
 const jestProjectDir = process.cwd();
@@ -74,6 +75,33 @@ function generateTestRegexes() {
   return nsSuffixes.map((suffix) => `(.*)${suffix}.cljs`);
 }
 
+/**
+ * Loads the setup file defined in the cljest config, either from the server, or from the compiled build
+ * directory (depending on if Jest is running with the CI env var).
+ *
+ * Will throw if the file could not be loaded for some reason.
+ */
+function loadSetupFile() {
+  const callProcess = createSyncFn(
+    path.resolve(__dirname, "utils-load-setup-file-process.js")
+  );
+  const cljestConfig = getCljestConfig();
+  const buildDir = getBuildDir();
+  const serverUrl = getServerUrl();
+
+  const {
+    status,
+    error,
+    path: setupFilePath,
+  } = callProcess(buildDir, serverUrl, cljestConfig);
+
+  if (status === "success") {
+    return require(setupFilePath);
+  }
+
+  throw new Error(error);
+}
+
 module.exports = {
   getRootDir,
   getBuildDir,
@@ -82,4 +110,5 @@ module.exports = {
   getCljestConfig,
   getPathsFromCljestConfig,
   generateTestRegexes,
+  loadSetupFile,
 };

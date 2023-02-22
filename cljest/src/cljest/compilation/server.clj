@@ -4,9 +4,11 @@
             [cljest.compilation.fs :as fs]
             [cljest.compilation.shadow :as shadow]
             [clojure.core.async :as as]
+            [clojure.string :as str]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.resource :refer [wrap-resource]]
+            [shadow.cljs.util]
             [taoensso.timbre :as log]))
 
 ;; Jetty announces some debug information when it's imported, so to avoid this we require after telling it not
@@ -30,8 +32,8 @@
   !build-status
   (atom {:status :unknown}))
 
-(defn- compile-and-update-build-status!
-  "Compiles ::jest and updates the `!build-status` atom with the latest state
+(defn ^:private compile-and-update-build-status!
+  "Compiles `::jest` and updates the `!build-status` atom with the latest state
   from the server. Returns the updated state."
   []
 
@@ -65,6 +67,50 @@
 
     @!build-status))
 
+(defn ^:private ns->built-ns-path
+  [ns]
+  (let [build-dir (shadow/get-build-directory)
+        relative-path (munge (name ns))]
+    (str build-dir "/" relative-path ".js")))
+
+(defn ^:private json-response
+  ([body]
+   (json-response 200 body))
+
+  ([status body]
+   {:status status
+    :headers {"Content-Type" "application/json"}
+    :body (cheshire/generate-string body)}))
+
+(defn ^:private ns-successfully-compiled?
+  [ns]
+  (let [{:keys [status error]} @!build-status]
+    (case status
+      :unknown false
+      :initial-failure false
+      :success true
+      :failure (str/includes? error (name ns)))))
+
+(defn ^:private handle-setup-file
+  "By the time /setup-file is called, compilation should be done, so we can trust the build status."
+  []
+  (let [{:keys [setup-ns]} (config/get-config!)]
+    (cond
+      (= :success (:status @!build-status))
+      (json-response {:path (ns->built-ns-path setup-ns)})
+
+      (= :initial-failure (:status @!build-status))
+      (json-response 422 @!build-status)
+
+      (and (= :failure (:status @!build-status)) (ns-successfully-compiled? setup-ns))
+      (json-response {:path (ns->built-ns-path setup-ns)})
+
+      (and (= :failure (:status @!build-status)) (not (ns-successfully-compiled? setup-ns)))
+      (json-response 422 @!build-status)
+
+      :else
+      (json-response 500 {:error "Compilation is in an unknown state"}))))
+
 (defn ^:private handle-compile
   []
   (let [{:keys [status]} (compile-and-update-build-status!)]
@@ -90,10 +136,14 @@
     (and (= :get request-method) (= "/build-status" uri))
     (handle-build-status)
 
+    (and (= :get request-method) (= "/setup-file" uri))
+    (handle-setup-file)
+
     :else
     {:status 404}))
 
 (defn start-server!
+  "Starts the Jest compilation server on the port in cljest.edn."
   []
   (shadow/start-server!)
   (fs/setup-watchers!)
