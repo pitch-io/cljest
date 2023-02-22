@@ -1,25 +1,25 @@
 (ns cljest.compilation.shadow
   (:require [cljest.compilation.config :as config]
-            [cljest.compilation.utils :as utils]
             [cljest.compilation.fs :as fs]
+            [cljest.compilation.utils :as utils]
             [clojure.core.async :as as]
-            [shadow.build.classpath]
-            [shadow.cljs.devtools.api :as devtools.api]
             [clojure.set :as set]
+            [shadow.build :as build]
+            [shadow.build.classpath]
+            [shadow.build.modules :as build.modules]
+            [shadow.cljs.devtools.api :as devtools.api]
             [shadow.cljs.devtools.config :as devtools.config]
             [shadow.cljs.devtools.server :as devtools.server]
             [shadow.cljs.devtools.server.fs-watch :as devtools.server.fs-watch]
             [shadow.cljs.devtools.server.reload-classpath :as devtools.server.reload-classpath]
             [shadow.cljs.devtools.server.runtime :as devtools.server.runtime]
+            [shadow.cljs.devtools.server.supervisor :as devtools.server.supervisor]
             [shadow.cljs.devtools.server.system-bus :as devtools.server.system-bus]
             [shadow.cljs.devtools.server.worker :as devtools.server.worker]
-            [shadow.build.modules :as build.modules]
             [shadow.cljs.devtools.server.worker.impl :as devtools.server.worker.impl]
-            [shadow.cljs.devtools.server.supervisor :as devtools.server.supervisor]
             [shadow.cljs.model]
-            [shadow.build :as build]
-            [taoensso.timbre :as log]
-            [shadow.cljs.util]))
+            [shadow.cljs.util]
+            [taoensso.timbre :as log]))
 
 (def ^:private build-target ::jest)
 

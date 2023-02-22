@@ -1,7 +1,7 @@
 (ns cljest.compilation.fs
   (:require [cljest.compilation.config :as config]
-            [clojure.java.io :as io]
             [clojure.core.async :as as]
+            [clojure.java.io :as io]
             [clojure.string :as str]
             [shadow.cljs.util]
             [taoensso.timbre :as log])
