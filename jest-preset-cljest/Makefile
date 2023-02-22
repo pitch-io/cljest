@@ -12,3 +12,6 @@ test:
 
 test-ci:
 	./node_modules/.bin/jest --ci
+
+publish: install
+	npm publish
