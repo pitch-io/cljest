@@ -1,0 +1,24 @@
+{
+  "name": "cljest",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Placeholder for dependencies used across different packages in this repo",
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pitch-io/cljest.git"
+  },
+  "keywords": [],
+  "author": "Pitch GmbH",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pitch-io/cljest/issues"
+  },
+  "homepage": "https://github.com/pitch-io/cljest#readme",
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^13.1.2"
+  }
+}

@@ -1,20 +1,20 @@
-const fetch = require('node-fetch')
-const { getServerUrl } = require('./utils')
+const fetch = require("node-fetch");
+const { getServerUrl } = require("./utils");
 
 async function fetchUntilAvailable() {
   if (process.env.CI) {
-    return
+    return;
   }
 
   try {
-    await fetch(`${getServerUrl()}/compile`)
+    await fetch(`${getServerUrl()}/compile`);
   } catch (_) {
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
-    return fetchUntilAvailable()
+    return fetchUntilAvailable();
   }
 }
 
 module.exports = async function globalSetup() {
-  await fetchUntilAvailable()
-}
+  await fetchUntilAvailable();
+};

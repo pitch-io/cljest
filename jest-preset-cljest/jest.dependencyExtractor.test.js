@@ -1,10 +1,10 @@
-const dependencyExtractor = require('./jest.dependencyExtractor')
+const dependencyExtractor = require("./jest.dependencyExtractor");
 
-jest.mock('./utils', () => ({
-  getPathsFromCljestConfig: () => ['/root_a', '/root_b'],
-}))
+jest.mock("./utils", () => ({
+  getPathsFromCljestConfig: () => ["/root_a", "/root_b"],
+}));
 
-describe('extract', () => {
+describe("extract", () => {
   const code = `
     (ns my-cool-ns.fun
         (:require "some-node-dep"
@@ -15,29 +15,35 @@ describe('extract', () => {
                   "more-node"
                   the.last.one)
         (:require-macros my-cool-ns.fun
-                         some.cljs.macros-dep))`
+                         some.cljs.macros-dep))`;
 
-  it('returns empty array if the filePath is not in roots', () => {
-    const result = dependencyExtractor.extract(code, '/root_c/my_cool_ns/fun.cljs')
+  it("returns empty array if the filePath is not in roots", () => {
+    const result = dependencyExtractor.extract(
+      code,
+      "/root_c/my_cool_ns/fun.cljs"
+    );
 
-    expect(Array.isArray(result)).toBeTruthy()
-    expect(result).toHaveLength(0)
-  })
+    expect(Array.isArray(result)).toBeTruthy();
+    expect(result).toHaveLength(0);
+  });
 
-  it('returns array of all deps from the given code', () => {
-    const result = dependencyExtractor.extract(code, '/root_a/my_cool_ns/fun.cljs')
+  it("returns array of all deps from the given code", () => {
+    const result = dependencyExtractor.extract(
+      code,
+      "/root_a/my_cool_ns/fun.cljs"
+    );
 
-    expect(Array.isArray(result)).toBe(true)
+    expect(Array.isArray(result)).toBe(true);
     expect(result).toStrictEqual([
-      'some-node-dep',
-      'some.cljs.dep',
-      'some.cljs.other-dep',
-      'some.cljs.another-dep',
-      'yet.another-dep',
-      'more-node',
-      'the.last.one',
-      'my-cool-ns.fun$macros',
-      'some.cljs.macros-dep$macros',
-    ])
-  })
-})
+      "some-node-dep",
+      "some.cljs.dep",
+      "some.cljs.other-dep",
+      "some.cljs.another-dep",
+      "yet.another-dep",
+      "more-node",
+      "the.last.one",
+      "my-cool-ns.fun$macros",
+      "some.cljs.macros-dep$macros",
+    ]);
+  });
+});

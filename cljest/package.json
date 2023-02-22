@@ -12,8 +12,10 @@
   "author": "Pitch Software GmbH",
   "license": "MIT",
   "devDependencies": {
+    "eslint": "^8.34.0",
     "jest": "^29.2.1",
     "jest-junit": "^14.0.1",
-    "jest-preset-cljest": "file:../jest-preset-cljest"
+    "jest-preset-cljest": "file:../jest-preset-cljest",
+    "prettier": "^2.8.4"
   }
 }

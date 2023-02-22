@@ -29,6 +29,10 @@ jobs:
         uses: DeLaGuardo/setup-clojure@9.5
         with:
           cli: 1.11.1.1224
+      - name: Lint
+        run: |
+          clojure -M -m cljfmt.main check cljest/src/**/*
+          clojure -M -m nsorg.cli cljest/src/**/*
       - name: Link jest-preset-cljest
         run: npm link ../jest-preset-cljest
       - name: Install npm dependencies
