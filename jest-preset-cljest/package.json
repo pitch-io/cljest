@@ -3,11 +3,7 @@
   "version": "0.9.0-alpha1",
   "description": "A preset for Jest to allow compiling ClojureScript tests",
   "main": "jest-preset.js",
-  "scripts": {
-    "test": "jest --watch",
-    "test:ci": "jest --ci",
-    "lint": "eslint ."
-  },
+  "scripts": {},
   "keywords": [],
   "author": "Pitch GmbH",
   "license": "MIT",
