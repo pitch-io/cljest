@@ -81,7 +81,7 @@
   (->> dir
        (clojure.java.io/file)
        (file-seq)
-       (filter #(.isFile %))
+       (filter #(and (.isFile %) (str/ends-with? % ".cljs")))
        (map str)
        (map #(str/replace-first % (str dir "/") ""))
        (map shadow.cljs.util/filename->ns)

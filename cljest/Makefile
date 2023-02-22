@@ -23,3 +23,6 @@ watch: install
 
 jest-ci: install compile
 	CI=true ./node_modules/.bin/jest --ci
+
+repl:
+	clj -J-Dclojure.server.repl="{:port 5678 :accept clojure.core.server/repl}"
