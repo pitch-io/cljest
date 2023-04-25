@@ -1,24 +1,23 @@
-(ns cljest.format
-  (:refer-clojure :exclude [format]))
+(ns cljest.format)
 
-(defn- value->str
+(defn value->str
   "Translates a value to a string. Handles stringifying nil to 'nil'"
   [value]
   (cond
     (nil? value) "nil"
     :else value))
 
-(defmulti format
+(defmulti formatter
   (fn [resolved-symbol _ _]
     resolved-symbol))
 
-(defmethod format 'cljs.core/nil?
+(defmethod formatter 'cljs.core/nil?
   [_ form negated?]
   (let [a (nth form 1)]
     `(fn []
        (str "Expected " ~(value->str a) " to " ~(when negated? "not ") "be nil."))))
 
-(defmethod format 'cljs.core/=
+(defmethod formatter 'cljs.core/=
   [_ form negated?]
   (let [a (nth form 1)
         b (nth form 2)]
@@ -27,7 +26,7 @@
             (when-not ~negated?
               (str "\n\n" (cljest.auxiliary/generate-diff ~a ~b)))))))
 
-(defmethod format 'cljs.core/not=
+(defmethod formatter 'cljs.core/not=
   [_ form negated?]
   (let [a (nth form 1)
         b (nth form 2)]
@@ -36,7 +35,7 @@
             (when ~negated?
               (str "\n\n" (cljest.auxiliary/generate-diff ~a ~b)))))))
 
-(defmethod format :default
+(defmethod formatter :default
   [_ form negated?]
   `(fn []
-     (str "Expected " ~(value->str form) " to " ~(when negated? "not ") "be truthy.\n\n")))
+     (str "Expected " '~form " to " ~(when negated? "not ") "be truthy.\n\n")))

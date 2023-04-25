@@ -15,10 +15,11 @@
                                         {:closed true}
                                         [:closure-defines :map]]]
    [:port {:default 9003} :int]
-   [:test-src-dirs [:sequential :string]]
+   [:test-src-dirs {:optional true} [:sequential :string]]
    [:ns-suffixes [:sequential {:default ['-test]} :symbol]]
    [:mode [:enum {:error/message "only :all is allowed" :default :all} :all]]
-   [:setup-ns [:symbol {:default 'cljest.setup}]]])
+   [:setup-ns [:symbol {:default 'cljest.setup}]]
+   [:formatters-ns {:optional true} [:symbol]]])
 
 (defn ^:private read-edn-safely
   "Given a File instance, reads it and attempts to parse as EDN. If it fails, returns nil rather than throwing."

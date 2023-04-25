@@ -1,7 +1,7 @@
 {
   "*.{clj,cljs,cljc}": [
-    "clojure -M -m nsorg.cli --replace",
-    "clojure -M -m cljfmt.main fix"
+    "clojure -A:fmt -M -m nsorg.cli --replace",
+    "clojure -A:fmt -M -m cljfmt.main fix"
   ],
   "*.js": ["eslint --fix"],
   "*.{js,json}": "prettier --write"

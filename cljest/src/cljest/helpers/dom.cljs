@@ -1,32 +1,52 @@
 (ns cljest.helpers.dom
   (:refer-clojure :exclude [type])
-  (:require ["@testing-library/react" :as rtl]
+  (:require ["@jest/globals" :refer [jest]]
+            ["@testing-library/react" :as rtl]
             ["@testing-library/user-event" :as user-event]
-            [applied-science.js-interop :as j]
-            [re-frame.core]
-            [re-frame.subs]
-            [re-frame.trace]
-            [reagent.core :as r]))
+            [applied-science.js-interop :as j]))
+
+(def ^:private events (atom (.setup user-event/default)))
+
+(defn -use-default-event-context!
+  []
+  (reset! events (.setup user-event/default)))
+
+(defn -use-fake-timers-event-context!
+  []
+  (reset! events (.setup user-event/default #js {:advanceTimers #(.runOnlyPendingTimers jest)})))
 
 (defn fire-event
   "Fires an event on the provided element. This is a low level function for non user triggered events.
-   Use click/type/keyboard for user triggered events."
+   Use click/type/keyboard/etc. for user triggered events."
   [element event]
   (rtl/fireEvent element event))
 
-(defn click
+(defn ^:private ensure-promise!
+  "Ensures the cb value is always a promise.
+
+  Used to smooth over the differences between user-event versions 13 and 14, as the former
+  doesn't use promises (mostly) and the latter always uses promises. Will be removed in a
+  future major version."
+  [cb]
+  (let [result (cb)]
+    (cond
+      (instance? js/Promise result) result
+      (boolean (.-then result)) result
+      :else (js/Promise.resolve result))))
+
+(defn click+
   "Simulates click on the provided element.
 
   Example:
 
   ```
   (let [my-element (h/get-by :test-id \"some-id\")]
-    (click my-element))
+    (click+ my-element))
   ```"
   [element]
-  (user-event/default.click element))
+  (ensure-promise! #(.click @events element)))
 
-(defn upload
+(defn upload+
   "Change a file input as if a user clicked it and selected files in the resulting file upload dialog.
 
   Example:
@@ -34,41 +54,41 @@
   ```
    (let [buffer (fs/readFileSync (path/join js/__dirname \" __fixtures__ \" \" filename.png \"))
                 file (js/File. buffer #js {:type \" image/png \"})]
-     (p/do!
+     (async
       ...
-      (h.dom/upload (h.dom/get-by :test-id \" upload-avatar \") file)                                                  
+      (h.dom/upload+ (h.dom/get-by :test-id \" upload-avatar \") file)
   ```"
   [element files]
-  (user-event/default.upload element files))
+  (ensure-promise! #(.upload @events element files)))
 
-(defn right-click
+(defn right-click+
   "Simulates right-click on the provided element.
 
   Example:
 
   ```
   (let [my-element (h/get-by :test-id \"some-id\")]
-    (right-click my-element))
+    (right-click+ my-element))
   ```"
   [element]
-  (user-event/default.click element #js {:button 2}))
+  (ensure-promise! #(.click @events element #js {:button 2})))
 
 (defn context-menu
   "Simulates context-menu event on `element`."
   [element]
   (rtl/fireEvent.contextMenu element))
 
-(defn clear
+(defn clear+
   "Simulates clear event on `element`."
   [element]
-  (user-event/default.clear element))
+  (ensure-promise! #(.clear @events element)))
 
-(defn keyboard
+(defn keyboard+
   "Simulates keyboard events described by `text`.
 
    See https://testing-library.com/docs/ecosystem-user-event#keyboardtext-options."
   [text]
-  (user-event/default.keyboard text))
+  (ensure-promise! #(.keyboard @events text)))
 
 (defn act
   "Wrap the provided `cb` in `react-dom/test-utils` `act` function. When performing an action on a component
@@ -87,28 +107,28 @@
              (cb)
              js/undefined)))
 
-(defn hover
+(defn hover+
   "Simulates hover on the provided element.
 
   Example:
 
   ```
   (let [my-element (h/get-by :test-id \"some-id\")]
-    (hover my-element))
+    (hover+ my-element))
   ```"
   [element]
-  (user-event/default.hover element))
+  (ensure-promise! #(.hover @events element)))
 
-(defn type
+(defn type+
   "Simulates typing on the provided element (generally an input).
 
   Example:
 
   ```
-  (type (h/get-by :test-id \"email\") \"john@example.com\")
+  (type+ (h/get-by :test-id \"email\") \"john@example.com\")
   ```"
   [element text]
-  (user-event/default.type element text))
+  (ensure-promise! #(.type @events element text)))
 
 (defn wait-for+
   "Calls the provided `cb` until it doesn't throw. Returns a promise.
@@ -118,10 +138,10 @@
   Example:
 
   ```
-  (p/do!
-     (click (h/get-by :test-id \"some-id\"))
-     (wait-for+ #(m/visible? (h/get-by :test-id \"some-other-id\")))
-     (click (h/get-by :test-id \"some-other-id\")))
+  (async
+    (await (click+ (h/get-by :test-id \"some-id\")))
+    (await (wait-for+ #(m/visible? (h/get-by :test-id \"some-other-id\"))))
+    (click+ (h/get-by :test-id \"some-other-id\")))
   ```"
   [cb]
   (rtl/waitFor cb))
@@ -146,25 +166,18 @@
   (rtl/within ele))
 
 (defn render
-  "Takes a component and renders it. If it is a reagent component it will be re-rendered when an atom
-  updates.
-
-  Does not return anything, and you should use queries like `get-by`, `query-by`, `get-all-by`
-  to get elements on the screen.
+  "Takes a React component and renders it. This works with vanille React components, e.g. UIx and Helix
+  components. If you need to render a Reagent component, use `cljest.helpers.reagent/render` instead.
 
   Example:
 
   ```
-  (render [my-cool-component {:best-prop true}])
+  (render ($ my-cool-component))
   ```"
   [component]
+  (rtl/render component))
 
-  (let [as-element #(r/as-element component)
-        rendered (rtl/render (as-element))
-        rerender (.-rerender rendered)]
-    (r/after-render #(rerender (as-element)))))
-
-(defn- query
+(defn ^:private query
   "Queries for an element on the screen based on the given `query-name`. Used by the multimethods
  like `get-by` and `query-by`."
   [query-name selector maybe-scoped-ele]

@@ -1,6 +1,7 @@
 (ns cljest.compilation.fs
   (:require [cljest.compilation.config :as config]
             [clojure.core.async :as as]
+            [clojure.java.classpath :as classpath]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [shadow.cljs.util]
@@ -9,15 +10,22 @@
 
 (defonce ^:private watchers (atom nil))
 
+(defn ^:private get-test-src-dirs
+  "Gets the test source directories, either from the config or classpath."
+  []
+  (let [{:keys [test-src-dirs]} (config/get-config!)]
+    (if test-src-dirs
+      (map #(io/file %) test-src-dirs)
+      (classpath/classpath-directories))))
+
 (defn ^:private teardown-watchers! []
   (log/infof "Tearing down watchers.")
   (for [[_ watcher] @watchers]
     (.close watcher)))
 
 (defn setup-watchers! []
-  (let [{:keys [test-src-dirs]} (config/get-config!)
+  (let [test-src-dirs (get-test-src-dirs)
         watchers-map (->> test-src-dirs
-                          (map #(io/file %))
                           (map (fn [dir]
                                  [dir (FileWatcher/create dir ["cljs" "cljc" "clj"])]))
                           (into {}))]
@@ -79,7 +87,6 @@
 (defn ^:private get-test-files-for-dir
   [suffixes dir]
   (->> dir
-       (clojure.java.io/file)
        (file-seq)
        (filter #(and (.isFile %) (str/ends-with? % ".cljs")))
        (map str)
@@ -91,7 +98,8 @@
 
 (defn get-test-files-from-src-dirs
   []
-  (let [{:keys [test-src-dirs ns-suffixes]} (config/get-config!)]
+  (let [test-src-dirs (get-test-src-dirs)
+        {:keys [ns-suffixes]} (config/get-config!)]
     (->> test-src-dirs
          (map (partial get-test-files-for-dir ns-suffixes))
          flatten)))

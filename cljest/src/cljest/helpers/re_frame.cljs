@@ -8,7 +8,7 @@
             [re-frame.subs]
             [re-frame.trace]))
 
-(defn- generate-diff
+(defn ^:private generate-diff
   "Generate a pretty diff of the two given values."
   [a b]
   (-> (deep-diff2/diff a b)

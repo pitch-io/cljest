@@ -1,4 +1,5 @@
 const fs = require("fs");
+const childProcess = require("child_process");
 const path = require("path");
 const { createSyncFn } = require("synckit");
 const { parseEDNString } = require("edn-data");
@@ -29,6 +30,15 @@ function withEnsuredProjectConfig(fn) {
   };
 }
 
+function getClassPathDirs() {
+  return childProcess
+    .execSync("clojure -Spath", { cwd: jestProjectDir })
+    .toString()
+    .trim()
+    .split(":")
+    .filter((p) => !p.toLowerCase().endsWith(".jar"));
+}
+
 const getRootDir = withEnsuredProjectConfig(() => jestProjectDir);
 const getBuildDir = withEnsuredProjectConfig(() =>
   path.resolve(jestProjectDir, ".jest")
@@ -49,7 +59,15 @@ const getCljestConfig = withEnsuredProjectConfig(() => {
 const getPathsFromCljestConfig = withEnsuredProjectConfig(() => {
   const { "test-src-dirs": testSrcDirs } = getCljestConfig();
 
-  return testSrcDirs.map((p) => path.resolve(jestProjectDir, p));
+  let relativeDirs;
+
+  if (testSrcDirs) {
+    relativeDirs = testSrcDirs;
+  } else {
+    relativeDirs = getClassPathDirs();
+  }
+
+  return relativeDirs.map((p) => path.resolve(jestProjectDir, p));
 });
 
 const getServerUrl = withEnsuredProjectConfig(() => {

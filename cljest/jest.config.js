@@ -6,4 +6,5 @@ module.exports = {
   clearMocks: true,
 
   preset: "jest-preset-cljest",
+  testEnvironment: "jest-environment-jsdom",
 };
