@@ -28,7 +28,8 @@
    ; See https://github.com/thheller/shadow-cljs/blob/650d78f2a7d81f33cb2590e142ddcbcbd756d781/src/main/shadow/cljs/devtools/server/fs_watch.clj#L34
    ; While we stop polling right away when starting the server, we don't want to poll even once, so we want the value to be arbitrarily high
    ; and make sure it never polls the watchers.
-  (atom (merge devtools.config/default-config {:fs-watch {:loop-wait Integer/MAX_VALUE}})))
+  (atom (merge devtools.config/default-config {:fs-watch {:loop-wait Integer/MAX_VALUE}
+                                               :cache-dir ".jest/shadow"})))
 
 (defn install-config!
   "Alters `shadow.cljs.devtools.config/load-cljs-edn` to use our internal config atom rather than a file.
