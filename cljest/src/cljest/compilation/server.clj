@@ -14,7 +14,9 @@
 ;; Jetty announces some debug information when it's imported, so to avoid this we require after telling it not
 ;; to announce.
 ;; Thanks to https://github.com/active-group/active-logger#jetty.
-(.setProperty (org.eclipse.jetty.util.log.Log/getProperties) "org.eclipse.jetty.util.log.announce" "false")
+(. System (setProperty "org.eclipse.jetty.util.log.announce" "false"))
+(. System (setProperty "org.eclipse.jetty.util.log.class" "org.eclipse.jetty.util.log.StdErrLog"))
+(. System (setProperty "org.eclipse.jetty.LEVEL" "OFF"))
 
 (require '[ring.adapter.jetty :refer [run-jetty]])
 
