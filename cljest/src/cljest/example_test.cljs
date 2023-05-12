@@ -32,7 +32,8 @@
 
   (it "should increment the count when the button is clicked"
     (h/async
-     (is (m/visible? (h.dom/get-by :text "0 cookies")))
+      ;; This is a bit contrived to illustrate that you can have negated matchers too
+     (is (not (m/has-text-content? (js/document.querySelector "h1") "1 cookies")))
      (await (h.dom/click+ (h.dom/get-by :text "Bake some cookies")))
      (is (m/visible? (h.dom/get-by :text "1 cookies")))))
 

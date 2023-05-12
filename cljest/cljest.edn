@@ -1,1 +1,2 @@
-{:setup-ns cljest.internal-test-setup-ns}
+{:aliases ["test"]
+ :setup-ns cljest.internal-test-setup-ns}
