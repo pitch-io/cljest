@@ -3,6 +3,51 @@
             [cljest.helpers.core :as h]
             [cyrik.cljs-macroexpand :refer [cljs-macroexpand-all] :rename {cljs-macroexpand-all macroexpand-all}]))
 
+(describe "with-mocks"
+  (defn ^:private cool-fn
+    [x y]
+    (* x y))
+
+  (it "works"
+    (is (= 50 (cool-fn 5 10)))
+
+    (h/with-mocks [cool-fn #(+ %1 %2)]
+      (is (= 15 (cool-fn 5 10))))))
+
+(describe "setup-mocks"
+  (def ^:private something-stateful
+    (let [counter (atom 0)]
+      (fn []
+        (swap! counter inc)
+        @counter)))
+
+  (def ^:private something-else-stateful
+    (let [counter (atom 0)]
+      (fn []
+        (swap! counter dec)
+        @counter)))
+
+  (h/setup-mocks [something-stateful (let [counter (atom 0)]
+                                       (fn []
+                                         (swap! counter (partial + 2))
+                                         @counter))
+
+                  something-else-stateful (let [counter (atom 0)]
+                                            (fn []
+                                              (swap! counter #(- % 2))
+                                              @counter))])
+
+  (it "works"
+    (is (= 2 (something-stateful)))
+    (is (= 4 (something-stateful)))
+
+    (is (= -2 (something-else-stateful)))
+    (is (= -4 (something-else-stateful))))
+
+  (it "reinstantiates each mock for each test case in scope"
+    (is (= 2 (something-stateful)))
+    (is (= -2 (something-else-stateful)))))
+
 (describe "async"
   (it "should macroexpand into a resolves promise when called with nothing"
     (is (= (macroexpand-all '(js/Promise.resolve))
