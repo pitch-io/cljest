@@ -7,13 +7,14 @@
   [start finish bindings & body]
   (let [names (take-nth 2 bindings)
         vals (take-nth 2 (drop 1 bindings))
+        wrapped-vals (map (fn [v] (list 'fn [] v)) vals)
         orig-val-syms (for [_ names] (gensym))
         temp-val-syms (for [_ names] (gensym))
         binds (map vector names temp-val-syms)
         redefs (reverse (map vector names orig-val-syms))
-        bind-value (fn [[k v]] (list 'set! k v))]
+        bind-value (fn [[k v]] (list 'set! k (list v)))]
     `(let [~@(interleave orig-val-syms names)
-           ~@(interleave temp-val-syms vals)
+           ~@(interleave temp-val-syms wrapped-vals)
            ~start #(do ~@(map bind-value binds))
            ~finish #(do ~@(map bind-value redefs))]
        ~@body)))
