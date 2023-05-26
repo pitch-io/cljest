@@ -15,6 +15,7 @@
  :aliases {:fmt {:extra-deps {cljfmt/cljfmt {:mvn/version "0.9.2"}
                               nsorg-cli/nsorg-cli {:mvn/version "0.3.1"}}}
            :publish {:extra-deps {appliedscience/deps-library {:mvn/version "0.3.4"}}}
-           :test {:extra-deps {com.pitch/uix.core {:mvn/version "0.8.1"}
+           :test {:extra-paths ["example_tests"]
+                  :extra-deps {com.pitch/uix.core {:mvn/version "0.8.1"}
                                com.pitch/uix.dom {:mvn/version "0.8.1"}
                                net.clojars.cyrik/cljs-macroexpand {:mvn/version "0.1.1"}}}}}

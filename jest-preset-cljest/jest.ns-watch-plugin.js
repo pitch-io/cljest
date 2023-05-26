@@ -106,10 +106,18 @@ class NamespaceWatchPlugin {
 
     return new Promise((resolve, reject) => {
       prompt.run((partialNs) => {
-        const filename = partialNs.replace(/-/g, "_");
+        const matchedNamespaces = possibleNamespaces.filter((ns) =>
+          ns.match(partialNs)
+        );
 
         updateConfigAndRun({
-          testPathPattern: filename,
+          testPathPattern: new RegExp(
+            matchedNamespaces
+              .map((ns) => ns.replace(/-/g, "_"))
+              .map((ns) => ns.replace(/\./g, "/"))
+              .map((ns) => `${ns}.cljs`)
+              .join("|")
+          ),
         });
 
         // see https://jestjs.io/docs/watch-plugins#runglobalconfig-updateconfigandrun. We should explicitly not

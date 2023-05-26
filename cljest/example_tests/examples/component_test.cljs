@@ -1,4 +1,4 @@
-(ns cljest.example-test
+(ns examples.component-test
   (:require [cljest.core :refer [before-each describe is it]]
             [cljest.helpers.core :as h]
             [cljest.helpers.dom :as h.dom]
