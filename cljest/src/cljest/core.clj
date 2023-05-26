@@ -3,7 +3,7 @@
             [cljest.format :as format]
             [cljs.analyzer.api :as analyzer.api]
             cljs.env
-            [clojure.string :as str]))
+            [malli.core :as malli]))
 
 (def ^:private user-defined-formatters-ns (some-> (config/get-config!)
                                                   (get :formatters-ns)
@@ -126,29 +126,49 @@
      (doseq ~seq-exprs (only ~name ~@body))
      js/undefined))
 
-;; TODO: spec
-(defn ^:private value->resolved-info
-  [env value]
-  (if (symbol? value)
-    (let [resolved (analyzer.api/resolve env value)
-          matcher-name (get-in resolved [:meta :jest-matcher])]
-      (if matcher-name
-        {:value value
-         :type :matcher
-         :matcher-name matcher-name}
-        {:value value
-         :type :symbol
-         :resolved (get resolved :name 'unknown)}))
-    {:value value
-     :type :primitive
-     :resolved 'primitive}))
+(def ^:private matcher-resolved-info [:map
+                                      {:closed true}
+                                      [:type [:enum :matcher]]
+                                      [:value :any]
+                                      [:matcher-name :string]])
+(def ^:private non-matcher-resolved-info [:map
+                                          {:closed true}
+                                          [:type [:enum :symbol :primitive]]
+                                          [:value :any]
+                                          [:resolved :symbol]])
+(def ^:private resolved-info [:multi {:dispatch :type}
+                              [:matcher matcher-resolved-info]
+                              [:symbol non-matcher-resolved-info]
+                              [:primitive non-matcher-resolved-info]])
+
+;; TODO: instrument using something like `malli.instrument/instrument!`
+;;       so we can just use `defn`
+(def ^:private value->resolved-info
+  (malli/-instrument
+   {:schema [:=> [:cat :map :any] resolved-info]}
+   (fn [env value]
+     (if (symbol? value)
+       (let [resolved (analyzer.api/resolve env value)
+             matcher-name (get-in resolved [:meta :jest-matcher])]
+         (if matcher-name
+           {:value value
+            :type :matcher
+            :matcher-name matcher-name}
+           {:value value
+            :type :symbol
+            :resolved (get resolved :name (symbol 'unknown))}))
+       {:value value
+        :type :primitive
+        :resolved (symbol 'primitive)}))))
 
 (defmacro ^:private primitive-is
+  "The form of `is` used when the value is primitive, i.e. not a sequence."
   [form negated?]
   (let [{:keys [resolved]} (value->resolved-info &env form)]
-    `(cljest.core/is-matcher #(do ~form) ~(format/formatter resolved form negated?))))
+    `(.. (js/expect #(do ~form)) ~'-cljest__is (~'call nil ~(format/formatter resolved form negated?)))))
 
 (defmacro ^:private matcher-is
+  "The form of `is` used when the value is a Jest matcher."
   [matcher-name body negated?]
   (let [args (rest body)
         asserted-value (first args)
@@ -171,7 +191,7 @@
 
       ;; For the actual assertion, we want the full body, but for the formatter, we want to pass the possibly inner part
       ;; of (not (...)) to simplify writing the macro.
-      `(cljest.core/is-matcher #(do ~forms) ~(format/formatter resolved body negated?)))))
+      `(.. (js/expect #(do ~forms)) ~'-cljest__is (~'call nil ~(format/formatter resolved body negated?))))))
 
 (defmacro is
   "A generic assertion macro for Jest. Asserts that `form` is truthy.

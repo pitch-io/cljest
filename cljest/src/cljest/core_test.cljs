@@ -1,8 +1,8 @@
 (ns cljest.core-test
   (:require [cljest.core :refer [describe is it]]
-            [cljest.helpers.dom :as h.dom]
             [cljest.matchers :as m]
-            [cyrik.cljs-macroexpand :refer [cljs-macroexpand-all] :rename {cljs-macroexpand-all macroexpand-all}]))
+            [cyrik.cljs-macroexpand :refer [cljs-macroexpand-all] :rename {cljs-macroexpand-all macroexpand-all}]
+            [malli.core :as malli]))
 
 (describe "is"
   (it "should support non-list forms (primitives)"
@@ -25,17 +25,21 @@
       (is @ex)))
 
   (it "should create an `is` expect call when expanded with a complex value"
-    ;; Because the third value in the sequence is a function that we don't really care about, we only really
-    ;; want to assert against the first two arguments. It's a bit cumbersome but I couldn't find a better way
-    ;; to do this... If someone sees this and knows a better way to do it, please create a PR!
     (let [expanded (macroexpand-all '(is (= 3 (+ 1 2))))]
-      (is (= 'cljest.core/is-matcher (first expanded)))
-      (is (= (macroexpand-all '#(do (= 3 (+ 1 2)))) (second expanded)))))
+
+      (is (= (macroexpand-all '(. (js/expect #(do (= 3 (+ 1 2)))) -cljest__is)) (nth expanded 1)))
+
+      ;; While it's a bit clunky to validate with `:tuple`, we want to assert that we have a symbol
+      ;; (call), nil, and then a sequence, which is the formatter function. I tried to use `match` but
+      ;; couldn't get it to work.
+      ;;
+      ;; Suggestions for improving this assertion are welcome!
+      (is (malli/validate [:tuple symbol? nil? seq?] (into [] (nth expanded 2))))))
 
   (it "should create an expect call when expanded with a primitive value"
     (let [expanded (macroexpand-all '(is true))]
-      (is (= 'cljest.core/is-matcher (first expanded)))
-      (is (= (macroexpand-all '#(do true)) (second expanded)))))
+      (is (= (macroexpand-all '(. (js/expect #(do true)) -cljest__is)) (nth expanded 1)))
+      (is (malli/validate [:tuple symbol? nil? seq?] (into [] (nth expanded 2))))))
 
   (it "should create only one expect call if called with a matcher"
     (is (= (macroexpand-all '(is (m/visible? (h.dom/get-by :text "hello"))))

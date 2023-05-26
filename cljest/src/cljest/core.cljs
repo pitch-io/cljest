@@ -26,10 +26,3 @@
    (spy-on object method-name js/undefined))
   ([object method-name access-type]
    (.spyOn jest object method-name access-type)))
-
-(defn is-matcher
-  "The underlying matcher for `is`.
-
-  Don't use this directly, use the `cljest.core/is` macro."
-  [body-fn formatter]
-  (.. (js/expect body-fn) (cljest__is formatter)))
