@@ -27,6 +27,7 @@ For more details, as well as details about getting started and configuration, pl
 [Migrating from `cljs.test` to `cljest` and differences](./docs/migrating.md)<br />
 [Unit tests](./docs/unit-tests.md)<br />
 [Component tests](./docs/component-tests.md)<br />
+[Matchers](./docs/matchers.md)<br />
 [Mocking](./docs/mocking.md)<br />
 [Async code](./docs/async.md)<br />
 [General API docs](./docs/api.md)<br />

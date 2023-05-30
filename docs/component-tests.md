@@ -87,8 +87,9 @@ Okay, how do we test it? To test it, we need to render our component and simulat
 Looking at the above, you'll notice a few things:
 
 - We're rendering our component, `main/the-bakery`, very similarly to how we do in our normal code, and you don't need to keep a reference to it later. Instead, `h.dom/get-by` (and other query functions) use the ["screen"](https://testing-library.com/docs/queries/about#screen), the `document.body`, when looking for elements.
-- We queried by text rather than a testing ID. Whenever possible, it's best to query for elements by their ARIA role, text, or something visible or spec defined, and query by the test ID as a last resort. https://testing-library.com/docs/queries/about#priority
+- We queried by text rather than a testing ID. Whenever possible, it's best to query for elements by their ARIA role, text, or something visible or spec defined, and query by the test ID as a last resort. For some details about when to use which queries, see the [`testing-library` query priority docs](https://testing-library.com/docs/queries/about#priority).
 - We're testing the component from the end user's perspective. We don't know that internally it's using `use-state`, and for all we know, it could be using `re-frame` or another state management library.
+- We're using a matcher to assert that the element is visible, which is coming from `cljest.matchers`. For more details about matchers, please see the [`cljest.matchers` namespace](https://github.com/pitch-io/cljest/blob/master/cljest/src/cljest/matchers.cljs) and the [matchers docs](./matchers.md).
 
 ## Going further - more cookies!!
 

@@ -31,8 +31,12 @@ function withEnsuredProjectConfig(fn) {
 }
 
 function getClassPathDirs() {
+  const { aliases } = getCljestConfig();
+
   return childProcess
-    .execSync("clojure -Spath", { cwd: jestProjectDir })
+    .execSync(`clojure ${aliases && `-A:${aliases.join(":")}`} -Spath`, {
+      cwd: jestProjectDir,
+    })
     .toString()
     .trim()
     .split(":")

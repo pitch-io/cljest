@@ -1,5 +1,18 @@
 # Changelog
 
+# Next
+
+## Features
+- [Allow users to define their own matchers.](https://github.com/pitch-io/cljest/pull/27)
+
+## Improvements
+- [Allow aliases to be defined in `cljest.edn` so that Jest can use it when getting the classpath.](https://github.com/pitch-io/cljest/pull/27)
+
+## Bugfixes
+- [Always reinstantiate mocks for each test case when using `setup-mocks`.](https://github.com/pitch-io/cljest/pull/28)
+- [Fix matcher negation.](https://github.com/pitch-io/cljest/pull/27)
+
+
 # 1.0.0
 
 ## Features

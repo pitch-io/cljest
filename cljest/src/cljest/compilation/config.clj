@@ -18,6 +18,7 @@
    [:test-src-dirs {:optional true} [:sequential :string]]
    [:ns-suffixes [:sequential {:default ['-test]} :symbol]]
    [:mode [:enum {:error/message "only :all is allowed" :default :all} :all]]
+   [:aliases {:optional true} [:sequential :string]]
    [:setup-ns [:symbol {:default 'cljest.setup}]]
    [:formatters-ns {:optional true} [:symbol]]])
 
