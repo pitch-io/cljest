@@ -24,7 +24,10 @@
     `(fn []
        (str "Expected " ~(value->str a) " to " ~(when negated? "not ") "equal " ~(value->str b) "."
             (when-not ~negated?
-              (str "\n\n" (cljest.auxiliary/generate-diff ~a ~b)))))))
+              (str "\n"
+                   "Expected:\n" ~a "\n\n"
+                   "Actual:\n" ~b "\n\n"
+                   (cljest.auxiliary/generate-diff ~a ~b)))))))
 
 (defmethod formatter 'cljs.core/not=
   [_ form negated?]

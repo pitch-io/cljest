@@ -118,8 +118,8 @@
                                                   (take-nth 2 (drop 1 bindings)))]
                                 {:current (group)
                                  :rest (conj rest
-                                             (group (conj forms (list 'js/Promise.all binding-vals)))
-                                             (group [(concat ['cljest.helpers.core/async] let-exprs)] binding-names))})
+                                             (group (conj forms (list 'js/Promise.all `[~@binding-vals])))
+                                             (group [(concat ['cljest.helpers.core/async] let-exprs)] [(apply vector binding-names)]))})
 
                               ;; If we have `let` but there aren't any `await` calls in the binding values, just create a new
                               ;; `async` wrapped group.
