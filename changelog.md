@@ -7,10 +7,12 @@
 
 ## Improvements
 - [Allow aliases to be defined in `cljest.edn` so that Jest can use it when getting the classpath.](https://github.com/pitch-io/cljest/pull/27)
+- [Add example tests directory.](https://github.com/pitch-io/cljest/pull/33)
 
 ## Bugfixes
 - [Always reinstantiate mocks for each test case when using `setup-mocks`.](https://github.com/pitch-io/cljest/pull/28)
 - [Fix matcher negation.](https://github.com/pitch-io/cljest/pull/27)
+- [Correctly determine the files to run based off of the namespace regex.](https://github.com/pitch-io/cljest/pull/33)
 
 
 # 1.0.0
