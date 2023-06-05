@@ -69,16 +69,21 @@
 
        (js/clearInterval timer))))
 
-  (it "should support resolved bindings"
-    (h/async
-     (let [result (await (js/Promise.resolve "cool stuff!"))]
-       (is (= result "cool stuff!")))))
+  (it "should return a promise even with a non-promise value"
+    (js/expect.assertions 1)
 
-  (it "should support multiple resolved bindings"
+    (.. (h/async 7)
+        (then (fn [resolved]
+                (is (= 7 resolved))))))
+
+  (it "should support arbitrary `await`-ed bindings inside of `let`"
     (h/async
-     (let [value-1 (await (js/Promise.resolve "cool stuff!"))
-           value-2 "some-non-promise"
-           value-3 (await (js/Promise.resolve "more cool stuff!"))]
-       (is (= value-1 "cool stuff!"))
-       (is (= value-2 "some-non-promise"))
-       (is (= value-3 "more cool stuff!"))))))
+     (let [value-1 {:a-key {:b-key "yeah dude"}}
+           value-2 (await (js/Promise.resolve value-1))
+           {value-3 :a-key} value-2
+           {value-4 :b-key} (await (js/Promise.resolve value-3))]
+
+       (is (= {:a-key {:b-key "yeah dude"}} value-1))
+       (is (= {:a-key {:b-key "yeah dude"}} value-2))
+       (is (= {:b-key "yeah dude"} value-3))
+       (is (= "yeah dude" value-4))))))
