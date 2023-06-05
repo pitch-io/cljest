@@ -13,7 +13,8 @@
 - [Always reinstantiate mocks for each test case when using `setup-mocks`.](https://github.com/pitch-io/cljest/pull/28)
 - [Fix matcher negation.](https://github.com/pitch-io/cljest/pull/27)
 - [Correctly determine the files to run based off of the namespace regex.](https://github.com/pitch-io/cljest/pull/33)
-
+- [Properly handle an `await`-ed `let` binding value](https://github.com/pitch-io/cljest/pull/35). Fixes [#31](https://github.com/pitch-io/cljest/issues/31)
+- [Correctly handle multiple binding pairs inside of `let`](https://github.com/pitch-io/cljest/pull/35). Fixes [#30](https://github.com/pitch-io/cljest/issues/30).
 
 # 1.0.0
 
