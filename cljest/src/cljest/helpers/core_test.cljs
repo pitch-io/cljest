@@ -1,7 +1,11 @@
 (ns cljest.helpers.core-test
-  (:require [cljest.core :refer [describe is it]]
+  (:require [cljest.core :refer [describe is it spy]]
             [cljest.helpers.core :as h]
-            [cyrik.cljs-macroexpand :refer [cljs-macroexpand-all] :rename {cljs-macroexpand-all macroexpand-all}]))
+            [cljest.matchers :as m]))
+
+(defn ^:private next-macrotask+
+  []
+  (js/Promise. (fn [res _] (js/setTimeout res))))
 
 (describe "with-mocks"
   (defn ^:private cool-fn
@@ -49,96 +53,37 @@
     (is (= -2 (something-else-stateful)))))
 
 (describe "async"
-  (it "should macroexpand into a resolves promise when called with nothing"
-    (is (= (macroexpand-all '(js/Promise.resolve))
-           (macroexpand-all '(h/async)))))
+  (it "should support basic `await` usage"
+    (let [cb (spy)
+          timer (js/setInterval cb)]
+      (h/async
+       (is (m/called-times? cb 0))
 
-  (it "should add the provided form to the body of the `then` function"
-    (is (= (macroexpand-all '(-> (js/Promise.resolve)
-                                 (.then (fn []
-                                          (fn-1)
-                                          (fn-2 with-an-arg)))))
-           (macroexpand-all '(h/async
-                              (fn-1)
-                              (fn-2 with-an-arg))))))
+       (await (next-macrotask+))
 
-  (it "should handle the `await` keyword by separating the bodies with then"
-    (is (= (macroexpand-all '(-> (js/Promise.resolve)
-                                 (.then (fn []
-                                          (fn-1)
-                                          (async-fn-2)))
-                                 (.then (fn []
-                                          (fn-3 with-an-arg)))))
+       (is (m/called-times? cb 1))
 
-           (macroexpand-all '(h/async
-                              (fn-1)
-                              (await (async-fn-2))
-                              (fn-3 with-an-arg))))))
+       (await (next-macrotask+))
 
-  (it "should handle `await` inside of `let` and turn the let body into another `async` call"
-    (is (= (macroexpand-all '(-> (js/Promise.resolve)
-                                 (.then (fn []
-                                          (async-fn-1)))
-                                 (.then (fn []
-                                          (let [name-1 :kw]
-                                            (-> (js/Promise.resolve)
-                                                (.then (fn []
-                                                         (fn-2)
-                                                         (async-fn-3 name-1)))))))
-                                 (.then (fn []
-                                          (fn-4)))))
+       (is (m/called-times? cb 2))
 
-           (macroexpand-all '(h/async (await (async-fn-1))
-                                      (let [name-1 :kw]
-                                        (fn-2)
-                                        (await (async-fn-3 name-1)))
-                                      (fn-4))))))
+       (js/clearInterval timer))))
 
-  (it "should turn await inside of a let binding value into Promise.all"
-    (is (= (macroexpand-all '(-> (js/Promise.resolve)
-                                 (.then (fn []
-                                          (fn-1)
-                                          (js/Promise.all [promise-1 non-promise promise-2])))
-                                 (.then (fn [name-1 name-2 name-3]
-                                          (-> (js/Promise.resolve)
-                                              (.then (fn []
-                                                       (fn-2)
-                                                       (async-fn-3 name-3))))))
-                                 (.then (fn []
-                                          (fn-4)))))
+  (it "should return a promise even with a non-promise value"
+    (js/expect.assertions 1)
 
-           (macroexpand-all '(h/async (fn-1)
-                                      (let [name-1 (await promise-1)
-                                            name-2 non-promise
-                                            name-3 (await promise-2)]
-                                        (fn-2)
-                                        (await (async-fn-3 name-3)))
-                                      (fn-4))))))
-  (it "should handle nested lets"
-    (is (= (macroexpand-all '(-> (js/Promise.resolve)
-                                 (.then (fn []
-                                          (async-fn-1)))
-                                 (.then (fn []
-                                          (fn-2)
-                                          (let [name-1 :kw]
-                                            (-> (js/Promise.resolve)
-                                                (.then (fn []
-                                                         (fn-3 name-1)
-                                                         (js/Promise.all [:kw-1 promise-1])))
-                                                (.then (fn [name-1-1 name-2-2]
-                                                         (-> (js/Promise.resolve)
-                                                             (.then (fn []
-                                                                      (fn-4 name-2-2))))))))))
+    (.. (h/async 7)
+        (then (fn [resolved]
+                (is (= 7 resolved))))))
 
-                                 (.then (fn []
-                                          (fn-5)))))
+  (it "should support arbitrary `await`-ed bindings inside of `let`"
+    (h/async
+     (let [value-1 {:a-key {:b-key "yeah dude"}}
+           value-2 (await (js/Promise.resolve value-1))
+           {value-3 :a-key} value-2
+           {value-4 :b-key} (await (js/Promise.resolve value-3))]
 
-           (macroexpand-all '(h/async (await (async-fn-1))
-                                      (fn-2)
-                                      (let [name-1 :kw]
-                                        (fn-3 name-1)
-                                        (let [name-1-1 :kw-1
-                                              name-2-2 (await promise-1)]
-                                          (fn-4 name-2-2)))
-                                      (fn-5)))))))
-
+       (is (= {:a-key {:b-key "yeah dude"}} value-1))
+       (is (= {:a-key {:b-key "yeah dude"}} value-2))
+       (is (= {:b-key "yeah dude"} value-3))
+       (is (= "yeah dude" value-4))))))

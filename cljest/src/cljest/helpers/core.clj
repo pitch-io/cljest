@@ -51,15 +51,84 @@
          (.finally finish#))))
 
 (defn ^:private group
-  "Creates a new \"group\" map that has `forms` and `bindings` keys."
+  "Creates a new 'group' map that has `forms` and `bindings` keys."
   ([] (group [] []))
   ([forms] (group forms []))
   ([forms bindings] {:forms forms :bindings bindings}))
 
-(defn ^:private await-seq?
-  "If the given `form`, as a list of quoted symbols, is eqv to `(list 'await ...)`"
+(defn ^:private await-form?
+  "Returns true if the given `form` is a sequence and the first element is `'await`."
   [form]
   (and (seq? form) (= 'await (first form))))
+
+(defn ^:private let-form?
+  "Returns true if the given `form` is a sequence and the first element is `'let`."
+  [form]
+  (and (seq? form) (= 'let (first form))))
+
+(defn ^:private unwrap-await
+  "If `form` is an `await`-wrapped form, return what it is wrapping."
+  [form]
+  (if (await-form? form)
+    (second form)
+    form))
+
+(defn ^:private forms->groups
+  "Takes all `forms` inside of an `async` block and turns them into `groups`, which later get turned into `.then`
+  calls."
+  [forms]
+  (let [{:keys [current prev]}
+        (reduce
+         (fn [{prev :prev {:keys [forms bindings]} :current} form]
+           (cond
+             ;; If the form itself is `(await ...)`, take the inner part and add it to the current group,
+             ;; then add the current group to the `prev` sequence.
+             (await-form? form)
+             {:current (group)
+              :prev (conj prev
+                          (group (conj forms (second form)) bindings))}
+
+             ;; If the form is `let` and any of the binding values has `(await ...)`, take the first binding pair
+             ;; and use its value as the return value of the current group. Add a new group with the symbol as the
+             ;; first binding.
+             (and (let-form? form) (some await-form? (second form)))
+             (let [all-bindings (second form)
+                   first-binding-sym (first all-bindings)
+                   first-binding-val (unwrap-await (second all-bindings))
+                   rest-bindings (nthrest all-bindings 2)
+                   let-forms (nthrest form 2)
+
+                   ;; If there aren't any more bindings (which would generate `(let [] forms)`),
+                   ;; use `forms` instead of creating another `let`.
+                   next-async-expr (if (empty? rest-bindings)
+                                     (concat ['cljest.helpers.core/async] let-forms)
+                                     (list 'cljest.helpers.core/async (concat (list 'let rest-bindings) let-forms)))]
+               {:current (group)
+                :prev (conj prev
+                            (group (conj forms first-binding-val))
+                            (group [next-async-expr] [first-binding-sym]))})
+
+             ;; If the form is `let` but there aren't any `await` calls in the binding values, just create a new
+             ;; `async` wrapped group.
+             (let-form? form)
+             {:current (group)
+              :prev (conj prev
+                          (group
+                           (conj forms (list 'let (second form) (concat ['cljest.helpers.core/async] (nthrest form 2))))
+                           bindings))}
+
+             ;; Otherwise, add the current form to the current group's forms.
+             :else
+             {:current (group (conj forms form) bindings)
+              :prev prev}))
+         {:current (group)
+          :prev []}
+         forms)]
+
+    ;; Prevent unnecessary functions from being added to the result
+    (if (empty? (:forms current))
+      prev
+      (conj prev current))))
 
 (defmacro async
   "Similar to JS's async/await. Wraps the body of `async` in a promise and allows for the use
@@ -94,55 +163,20 @@
       (some-fn)))
   ```
   "
-  [& body]
-  (let [then-groups (->> body
-                         (reduce
-                          (fn [{rest :rest {:keys [forms bindings]} :current} form]
-                            (cond
-                              ;; If the form itself is `(await ...)`, take the `...`, add it to the current group,
-                              ;; and add the current group to the `rest`.
-                              (await-seq? form)
-                              {:current (group)
-                               :rest (conj rest (group (conj forms (second form)) bindings))}
-
-                              ;; If the form is `let` and any of the binding values has `(await ...)`, add a new
-                              ;; `js/Promise.all` to the rest and add the body of the `let` as a second new group,
-                              ;; wrapped in `async`, with the binding names from the `let` as the arguments of the
-                              ;; `.then` function.
-                              (and (= 'let (first form)) (some await-seq? (second form)))
-                              (let [bindings (second form)
-                                    let-exprs (nthrest form 2)
-                                    binding-names (take-nth 2 bindings)
-                                    binding-vals (map
-                                                  #(if (await-seq? %) (second %) %)
-                                                  (take-nth 2 (drop 1 bindings)))]
-                                {:current (group)
-                                 :rest (conj rest
-                                             (group (conj forms (list 'js/Promise.all binding-vals)))
-                                             (group [(concat ['cljest.helpers.core/async] let-exprs)] binding-names))})
-
-                              ;; If we have `let` but there aren't any `await` calls in the binding values, just create a new
-                              ;; `async` wrapped group.
-                              (= 'let (first form))
-                              {:current (group)
-                               :rest (conj rest
-                                           (group
-                                            (conj forms (list 'let (second form) (concat ['cljest.helpers.core/async] (nthrest form 2))))
-                                            bindings))}
-
-                              ;; Otherwise, add the current form to the current group's forms.
-                              :else
-                              {:current (group (conj forms form) bindings)
-                               :rest rest}))
-                          {:current (group)
-                           :rest []})
-
-                         ;; Prevent unnecessary functions from being added to the result
-                         ((fn [{:keys [current rest]}]
-                            (if (empty? (:forms current))
-                              rest
-                              (conj rest current))))
+  [& forms]
+  (let [groups (forms->groups forms)
+        ;; We can assume there are no bindings for the first group, since bindings necessarily must come
+        ;; from a previous group.
+        first-forms (:forms (first groups))
+        then-groups (->> groups
+                         rest
                          (map (fn [{:keys [forms bindings]}]
                                 (list '.then (concat (list 'fn (apply vector bindings)) forms)))))]
-    `(-> (js/Promise.resolve)
-         ~@then-groups)))
+
+    `(do ~@(butlast first-forms)
+         (let [beginning# ~(last first-forms)]
+           ;; This avoids creating a new Promise instance if `beginning#` is thennable
+           (-> (if (and beginning# (.-then beginning#))
+                 beginning#
+                 (js/Promise.resolve beginning#))
+               ~@then-groups)))))
