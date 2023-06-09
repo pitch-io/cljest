@@ -79,7 +79,7 @@
                                 "\n\n"
                                 (str/join "\n" (map humanize-error errors)))))))))
 
-(defn- load-config!
+(defn ^:private ^:no-doc load-config!
   "Loads the cljest.edn file and coerces based on the Malli schema."
   []
   (let [config-io (io/file "cljest.edn")]
@@ -92,7 +92,7 @@
           config (coerce-config-with-pretty-exception! raw-config)]
       (reset! !config config))))
 
-(defn get-config!
+(defn ^:no-doc get-config!
   "Returns the coerced config. If it hasn't been loaded yet, load it."
   []
   (if-not @!config
