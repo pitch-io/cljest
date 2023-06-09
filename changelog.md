@@ -1,6 +1,6 @@
 # Changelog
 
-# Next
+# 1.1.0
 
 ## Features
 - [Allow users to define their own matchers.](https://github.com/pitch-io/cljest/pull/27)
