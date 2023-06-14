@@ -5,12 +5,16 @@
             cljs.env
             [malli.core :as malli]))
 
-(def ^:private user-defined-formatters-ns (some-> (config/get-config!)
-                                                  (get :formatters-ns)
-                                                  symbol))
+(def ^:dynamic *formatters-set?* false)
 
-(when user-defined-formatters-ns
-  (require `[~user-defined-formatters-ns]))
+(defn require-user-defined-formatters-ns!
+  []
+  (when-not *formatters-set?*
+    (when-let [user-formatter-ns (some-> (config/get-config!)
+                                         (get :formatters-ns)
+                                         symbol)]
+      (require `[~user-formatter-ns])
+      (set! *formatters-set?* true))))
 
 (defmacro describe
   "Describes a block of tests. Any `before-each`/`after-each` inside of this block will be scoped to it.
@@ -203,6 +207,8 @@
   (it \"should be true\"
     (is (= true (my-fn :some-keyword)))"
   [form]
+  (require-user-defined-formatters-ns!)
+
   (if (seq? form)
     `(complex-is ~form)
     `(primitive-is ~form false)))
