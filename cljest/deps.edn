@@ -15,7 +15,8 @@
  :aliases {:fmt {:extra-deps {cljfmt/cljfmt {:mvn/version "0.9.2"}
                               nsorg-cli/nsorg-cli {:mvn/version "0.3.1"}}}
            :dev {:extra-deps {io.github.clojure/tools.build {:mvn/version "0.9.4"}
-                              io.github.cljdoc/cljdoc-analyzer {:git/sha "2983ed108d9a44ab1c26cd0f4a0d85425893bb62"}}
+                              io.github.cljdoc/cljdoc-analyzer {:git/sha "2983ed108d9a44ab1c26cd0f4a0d85425893bb62"}
+                              slipset/deps-deploy {:mvn/version "0.2.1"}}
                  :extra-paths ["dev"]}
            :test {:extra-paths ["example_tests"]
                   :extra-deps {com.pitch/uix.core {:mvn/version "0.8.1"}

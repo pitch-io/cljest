@@ -3,6 +3,8 @@
             [cljest.build :as build]))
 
 (defn main
+  "Runs a `cljdoc-analyzer` analysis. Requires the JAR and POM to be built
+  (the `cljest.build/main` function needs to be run first)."
   [& _]
   (let [build-config (build/get-build-config)
         analysis-config {:version (:version build-config)

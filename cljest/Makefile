@@ -18,15 +18,17 @@ lint-fix: install
 	./node_modules/.bin/eslint --fix .
 	./node_modules/.bin/prettier -w .
 
-build:
+build: clean
 	clojure -A:dev -X cljest.build/main
 
-analyze: clean build
+analyze: build
 	clojure -A:dev -X cljest.analyze/main
 
-# TODO: make it publish the built stuff from above
-publish:
-	clj -A:publish -M -m deps-library.release
+install-local-jar: build
+	clj -A:dev -X cljest.deploy/main
+
+publish-to-clojars: build
+	clj -A:dev -X cljest.deploy/main :clojars? true
 
 server:
 	clojure -A:test -X cljest.compilation/watch

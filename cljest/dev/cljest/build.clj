@@ -58,6 +58,7 @@
       (throw (ex-info (str "POM file for cljest does not exist. Ensure that cljest has been built.") {})))))
 
 (defn main
+  "Builds the JAR and POM files for the current version of `cljest`, as defined in `build.edn`."
   [& _]
   (let [{:keys [version optional-deps lib extra-paths ignore src-dirs]} (get-build-config)
         basis (tools.build.api/create-basis {:project "deps.edn"
