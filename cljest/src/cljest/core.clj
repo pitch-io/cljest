@@ -5,12 +5,20 @@
             cljs.env
             [malli.core :as malli]))
 
-(def ^:private user-defined-formatters-ns (some-> (config/get-config!)
-                                                  (get :formatters-ns)
-                                                  symbol))
+(def ^:dynamic *formatters-set?* false)
 
-(when user-defined-formatters-ns
-  (require `[~user-defined-formatters-ns]))
+(defn ^:private set-formatters!
+  []
+  (when-not *formatters-set?*
+    (when-let [user-defined-formatters-ns (some-> (config/get-config!)
+                                                  (get :formatters-ns)
+                                                  symbol)]
+      (when user-defined-formatters-ns
+        (require `[~user-defined-formatters-ns])))
+
+    ;; I don't want this to be set in a binding, I _really_ want this to be set
+    ;; to true once we load the formatters.
+    (alter-var-root #'*formatters-set?* (constantly true))))
 
 (defmacro describe
   "Describes a block of tests. Any `before-each`/`after-each` inside of this block will be scoped to it.
@@ -203,6 +211,8 @@
   (it \"should be true\"
     (is (= true (my-fn :some-keyword)))"
   [form]
+  (set-formatters!)
+
   (if (seq? form)
     `(complex-is ~form)
     `(primitive-is ~form false)))
