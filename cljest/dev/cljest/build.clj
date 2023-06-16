@@ -60,7 +60,7 @@
 (defn main
   "Builds the JAR and POM files for the current version of `cljest`, as defined in `build.edn`."
   [& _]
-  (let [{:keys [version optional-deps lib extra-paths ignore src-dirs]} (get-build-config)
+  (let [{:keys [version optional-deps lib extra-paths ignore src-dirs scm]} (get-build-config)
         basis (tools.build.api/create-basis {:project "deps.edn"
                                              ;; `optional-deps` are still added to the POM, so that tools such as
                                              ;; `cljdoc-analyzer` can work correctly, but are marked as "provided",
@@ -106,5 +106,6 @@
                                 :lib lib
                                 :version version
                                 :basis basis
+                                :scm scm
                                 :src-dirs ["src"]})))
 
