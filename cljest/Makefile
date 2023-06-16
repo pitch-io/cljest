@@ -4,8 +4,7 @@ install:
 	npm i
 
 clean:
-	rm -rf .jest
-	rm -rf .shadow-cljs
+	rm -rf .jest .shadow-cljs .cpcache dist
 
 lint: install
 	clojure -A:fmt -M -m nsorg.cli src
@@ -19,8 +18,17 @@ lint-fix: install
 	./node_modules/.bin/eslint --fix .
 	./node_modules/.bin/prettier -w .
 
-publish:
-	clj -A:publish -M -m deps-library.release
+build: clean
+	clojure -A:dev -X cljest.build/main
+
+analyze: build
+	clojure -A:dev -X cljest.analyze/main
+
+install-local-jar: build
+	clj -A:dev -X cljest.deploy/main
+
+publish-to-clojars: build
+	clj -A:dev -X cljest.deploy/main :clojars? true
 
 server:
 	clojure -A:test -X cljest.compilation/watch

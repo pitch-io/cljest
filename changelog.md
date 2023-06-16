@@ -1,5 +1,16 @@
 # Changelog
 
+# Next
+
+## Improvements
+
+- [Fix `cljdoc-analyze` build.](https://github.com/pitch-io/cljest/pull/38)
+
+## Internal
+
+- [Build using `clojure.tools.build` instead of `applied-science/deps-library`.](https://github.com/pitch-io/cljest/pull/38)
+- [Migrate from `applied-science/deps-library` to `deps-deploy` for Clojars deployment.](https://github.com/pitch-io/cljest/pull/38)
+
 # 1.1.0
 
 ## Features
