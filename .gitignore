@@ -4,6 +4,6 @@ node_modules/
 .shadow-cljs/
 .cpcache/
 .lsp/
+
+cljest/dist/
 cljest/reports/
-pom.xml
-cljest/target
