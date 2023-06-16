@@ -86,7 +86,25 @@ jobs:
       - name: Run JS tests
         run: make test-ci
 
+  check-version-bumps:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.versions-bumped.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check if versions bumped
+        id: versions-bumped
+        uses: tj-actions/changed-files@v36.3.0
+        with:
+          files: |
+            cljest/build.edn
+            jest-preset-cljest/package.json
+
+
   ensure-package-versions-match:
+    needs: check-version-bumps
+    if: needs.check-version-bumps.outputs.changed == 'true'
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
