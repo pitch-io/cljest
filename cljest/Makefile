@@ -25,10 +25,10 @@ analyze: build
 	clojure -A:dev -X cljest.analyze/main
 
 install-local-jar: build
-	clj -A:dev -X cljest.deploy/main
+	clojure -A:dev -X cljest.deploy/main
 
 publish-to-clojars: build
-	clj -A:dev -X cljest.deploy/main :clojars? true
+	clojure -A:dev -X cljest.deploy/main :clojars? true
 
 server:
 	clojure -A:test -X cljest.compilation/watch
