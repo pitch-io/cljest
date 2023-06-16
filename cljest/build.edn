@@ -1,5 +1,5 @@
 {:lib com.pitch/cljest
- :version "1.1.0"
+ :version "1.1.1"
  :scm {:url "https://github.com/pitch-io/cljest"
        :connection "scm:git:https://github.com/pitch-io/cljest.git"
        :developerConnection "scm:git:git@github.com:pitch-io/cljest.git"}
