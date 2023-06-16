@@ -100,7 +100,6 @@ jobs:
             cljest/build.edn
             jest-preset-cljest/package.json
 
-
   ensure-package-versions-match:
     needs: check-version-bumps
     if: needs.check-version-bumps.outputs.changed == 'true'
