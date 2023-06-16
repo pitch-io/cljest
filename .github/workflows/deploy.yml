@@ -1,0 +1,63 @@
+name: Deploy packages
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  check-version-bumps:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.versions-bumped.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check if versions bumped
+        id: versions-bumped
+        uses: tj-actions/changed-files@v36.3.0
+        with:
+          files: |
+            cljest/build.edn
+            jest-preset-cljest/package.json
+
+  deploy-cljest:
+    needs: check-version-bumps
+    if: needs.check-version-bumps.outputs.changed == 'true'
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cljest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@9.5
+        with:
+          cli: 1.11.1.1224
+      - name: Deploy cljest
+        run: make publish-to-clojars
+        env:
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+
+  deploy-jest-preset-cljest:
+    needs: check-version-bumps
+    if: needs.check-version-bumps.outputs.changed == 'true'
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jest-preset-cljest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy jest-preset-cljest
+        run: |
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+          npm publish
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

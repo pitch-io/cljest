@@ -10,6 +10,7 @@
 
 - [Build using `clojure.tools.build` instead of `applied-science/deps-library`.](https://github.com/pitch-io/cljest/pull/38)
 - [Migrate from `applied-science/deps-library` to `deps-deploy` for Clojars deployment.](https://github.com/pitch-io/cljest/pull/38)
+- [Check that the versions match expectations and automatically merge when they bump.](https://github.com/pitch-io/cljest/pull/40)
 
 # 1.1.0
 
