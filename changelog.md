@@ -1,5 +1,14 @@
 # Changelog
 
+# 1.1.3
+
+This version and 1.1.2 have no user facing changes except that they make the `cljdoc` build work completely, as in `1.1.1` while the analysis worked, the docs didn't.
+
+## Internal
+
+- [Use `clojure` rather than `clj` and add update `scm.connection` value to use `scm:git:git...`.](https://github.com/pitch-io/cljest/pull/42)
+- [Add git revision to POM file.](https://github.com/pitch-io/cljest/pull/43)
+
 # 1.1.1
 
 ## Improvements
