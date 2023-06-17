@@ -83,7 +83,8 @@
                                                                        [k (assoc v :optional? true)]))
                                                                 (into {}))}})
         jar-dir "dist/build_files/jar"
-        pom-dir (str "dist/" (lib->group-id lib))]
+        pom-dir (str "dist/" (lib->group-id lib))
+        git-rev (tools.build.api/git-process {:git-args ["rev-parse" "HEAD"]})]
     (tools.build.api/copy-dir {:src-dirs src-dirs
                                :target-dir jar-dir
                                :ignores (map re-pattern ignore)})
@@ -106,6 +107,6 @@
                                 :lib lib
                                 :version version
                                 :basis basis
-                                :scm scm
+                                :scm (assoc scm :tag git-rev)
                                 :src-dirs ["src"]})))
 
