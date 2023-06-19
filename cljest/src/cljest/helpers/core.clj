@@ -5,18 +5,32 @@
   "Similar to `with-redefs` but allows arbitrarily beginning and ending when the bindings are mocked and reset by calling
   `start` and `finish` respectively."
   [start finish bindings & body]
-  (let [names (take-nth 2 bindings)
-        vals (take-nth 2 (drop 1 bindings))
-        wrapped-vals (map (fn [v] (list 'fn [] v)) vals)
-        orig-val-syms (for [_ names] (gensym))
-        temp-val-syms (for [_ names] (gensym))
-        binds (map vector names temp-val-syms)
-        redefs (reverse (map vector names orig-val-syms))
+  (let [original-syms (take-nth 2 bindings)
+        orig-vals (take-nth 2 (drop 1 bindings))
+
+        ;; Wrap the values in a function so that they get recreated on each call. This
+        ;; prevents something stateful from "keeping" its state in multiple test cases.
+        wrapped-orig-vals (map (fn [v] (list 'fn [] v)) orig-vals)
+
+        ;; Generate new symbols for both the original values and the
+        ;; temporary values
+        orig-val-syms (for [_ original-syms] (gensym))
+        temp-val-syms (for [_ original-syms] (gensym))
+
+        ;; Create new vectors that sets the original symbols to the temporary ones
+        mocked-binds (map vector original-syms temp-val-syms)
+
+        ;; Put the bindings back. Use the same function call method as above to mimic
+        ;; how we handle mocks
+        orig-binds (reverse (map (fn [name v] [name (list 'fn [] v)]) original-syms orig-val-syms))
+
+        ;; The actual `(set! sym (val))`. It calls whatever `v` it, so the values need
+        ;; to be wrapped in a function to allow for that.
         bind-value (fn [[k v]] (list 'set! k (list v)))]
-    `(let [~@(interleave orig-val-syms names)
-           ~@(interleave temp-val-syms wrapped-vals)
-           ~start #(do ~@(map bind-value binds))
-           ~finish #(do ~@(map bind-value redefs))]
+    `(let [~@(interleave orig-val-syms original-syms)
+           ~@(interleave temp-val-syms wrapped-orig-vals)
+           ~start #(do ~@(map bind-value mocked-binds))
+           ~finish #(do ~@(map bind-value orig-binds))]
        ~@body)))
 
 (defmacro setup-mocks
