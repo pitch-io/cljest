@@ -31,6 +31,14 @@
         (swap! counter dec)
         @counter)))
 
+  ;; The presence of this function validates mocking the symbol
+  ;; doesn't cause the function to be called. See https://github.com/pitch-io/cljest/issues/44
+  ;; The same could be done with a primitive value that can't be `.call`-ed, but this
+  ;; will show a nicer error.
+  (defn ^:private my-super-cool-fn
+    []
+    (throw (js/Error. "This function should never be called!")))
+
   (h/setup-mocks [something-stateful (let [counter (atom 0)]
                                        (fn []
                                          (swap! counter (partial + 2))
@@ -39,7 +47,9 @@
                   something-else-stateful (let [counter (atom 0)]
                                             (fn []
                                               (swap! counter #(- % 2))
-                                              @counter))])
+                                              @counter))
+
+                  my-super-cool-fn (constantly nil)])
 
   (it "works"
     (is (= 2 (something-stateful)))
