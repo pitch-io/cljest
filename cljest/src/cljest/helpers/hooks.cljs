@@ -1,5 +1,5 @@
 (ns cljest.helpers.hooks
-  (:require ["@testing-library/react-hooks" :as rhtl]))
+  (:require ["@testing-library/react" :as rhtl]))
 
 (defn render-hook
   "Renders given `hook-fn`.
